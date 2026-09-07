@@ -1,0 +1,10 @@
+{
+  "name": "create-xurface-sdk",
+  "version": "0.1.0",
+  "description": "Scaffold a skills-, tools- or capabilities-based Xurface SDK from a Horizon Solution Manifest.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": { "create-xurface-sdk": "./bin/create-xurface-sdk.js" },
+  "engines": { "node": ">=18" },
+  "repository": { "type": "git", "url": "https://github.com/500xlaunch-org/xurface" }
+}

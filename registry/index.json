@@ -1,0 +1,36 @@
+{
+  "spec_version": "1.0",
+  "note": "Public registry of Xurface SDKs. Add yours via toolkit/SUBMITTING.md.",
+  "sdks": [
+    {
+      "slug": "sdk-typescript",
+      "name": "Xurface SDK (TypeScript)",
+      "kind": "tools",
+      "lang": "ts",
+      "package": "repo:packages/sdk-typescript",
+      "repo": "https://github.com/500xlaunch-org/xurface",
+      "publisher": "500xLaunch",
+      "official": true
+    },
+    {
+      "slug": "sdk-python",
+      "name": "Xurface SDK (Python)",
+      "kind": "tools",
+      "lang": "py",
+      "package": "repo:packages/sdk-python",
+      "repo": "https://github.com/500xlaunch-org/xurface",
+      "publisher": "500xLaunch",
+      "official": true
+    },
+    {
+      "slug": "skill-coding-agents",
+      "name": "Xurface skill for coding agents (VS Code)",
+      "kind": "skills",
+      "lang": "md",
+      "package": "repo:skills/xurface",
+      "repo": "https://github.com/500xlaunch-org/xurface",
+      "publisher": "500xLaunch",
+      "official": true
+    }
+  ]
+}

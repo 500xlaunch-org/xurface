@@ -1,0 +1,25 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: TypeScript SDK typechecks
+        run: |
+          cd packages/sdk-typescript
+          npm install --no-audit --no-fund
+          npx tsc -p tsconfig.json --noEmit
+      - name: Toolkit CLI parses and scaffolds
+        run: |
+          node --check toolkit/create-xurface-sdk/bin/create-xurface-sdk.js
+          node toolkit/create-xurface-sdk/bin/create-xurface-sdk.js /tmp/smoke --kind tools --lang ts
+          test -f /tmp/smoke/xurface.yaml
+      - name: Python SDK compiles
+        run: python3 -m py_compile packages/sdk-python/xurface/__init__.py packages/sdk-python/xurface/client.py
+      - name: Registry JSON is valid
+        run: python3 -c "import json; json.load(open('registry/index.json'))"

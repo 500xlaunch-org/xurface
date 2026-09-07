@@ -1,0 +1,204 @@
+openapi: 3.1.0
+info:
+  title: Xurface Horizon API
+  version: "1.0-draft"
+  description: >
+    The Horizon platform API surface an agent uses: OAuth-like credentials from a
+    Solution Manifest, agent declaration, user self-discovery, and the discernment
+    lifecycle (onXurface, pushXurface, awaitXurface). Rate limits and discernment
+    budgets apply; see spec/rate-limits.md.
+  license: { name: Apache-2.0 }
+servers:
+  - url: https://xurface.500xlaunch.com
+paths:
+  /oauth/token:
+    post:
+      summary: Exchange Solution credentials for a short-lived access token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, client_id, client_secret]
+              properties:
+                grant_type: { type: string, enum: [client_credentials] }
+                client_id: { type: string }
+                client_secret: { type: string }
+                audience: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  token_type: { type: string, enum: [Bearer] }
+                  expires_in: { type: integer }
+  /v1/agents/{agentId}:
+    put:
+      summary: Declare an agent (identity + abilities), idempotent
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: agentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AgentDeclaration" }
+      responses:
+        "200":
+          description: Effective criticities as normalized by Horizon
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent: { type: string, description: "public id agt_..." }
+                  abilities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key: { type: string }
+                        criticity: { $ref: "#/components/schemas/Criticity" }
+                        status: { type: string, enum: [accepted, raised, lowered] }
+  /v1/discovery/users:
+    post:
+      summary: Find the Xurface user behind a Solution-side user id
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_ref]
+              properties:
+                user_ref:
+                  type: object
+                  required: [type, value]
+                  properties:
+                    type: { type: string, enum: [email, phone, external_id] }
+                    value: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [linked, pending, none] }
+                  user: { type: string, description: "pairwise id xid_..." }
+                  link: { type: string }
+                  threshold: { $ref: "#/components/schemas/Criticity" }
+  /v1/intents:
+    post:
+      summary: onXurface. Classify an action (or sequence) and evaluate the rule
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntentRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Intent" }
+        "429": { description: Rate limit or discernment budget exceeded }
+  /v1/intents/{id}/push:
+    post:
+      summary: pushXurface. Send the intent to the user's Xurface Discern
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "202": { description: queued for delivery } }
+  /v1/intents/{id}/await:
+    get:
+      summary: awaitXurface. Long-poll for the human decision
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: timeout, in: query, schema: { type: integer, default: 30000 } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Intent" }
+  /v1/intents/{id}/decide:
+    post:
+      summary: Record the user's decision (called by Xurface Discern)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approve, approve_all, deny] }
+                step: { type: integer, description: "approve applies to one step" }
+                input: { type: string, description: "answer to an input request" }
+                edited_details: { type: object }
+      responses: { "200": { description: decision recorded } }
+  /v1/limits:
+    get:
+      summary: Current rate limits and discernment budgets for this Solution
+      security: [{ bearer: [] }]
+      responses: { "200": { description: limits snapshot } }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  schemas:
+    Criticity: { type: string, enum: [LOW, MEDIUM, HIGH, SEVERE] }
+    AgentDeclaration:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        display_name: { type: string }
+        logo: { type: string, format: uri }
+        description: { type: string }
+        abilities:
+          type: array
+          items:
+            type: object
+            required: [key, kind, criticity]
+            properties:
+              key: { type: string }
+              kind: { type: string, enum: [skill, tool, capability] }
+              criticity: { $ref: "#/components/schemas/Criticity" }
+              description: { type: string }
+              requires_auth: { type: array, items: { type: string } }
+              schema: { type: object }
+    IntentRequest:
+      type: object
+      required: [user, agent, capability]
+      properties:
+        user: { type: string, description: "xid_... from discovery" }
+        agent: { type: string }
+        capability: { type: string }
+        details: { type: object }
+        sequence:
+          type: array
+          description: One card, several steps. Deny always denies all.
+          items:
+            type: object
+            properties:
+              capability: { type: string }
+              details: { type: object }
+              input_request: { type: string, description: "ask the user for a value" }
+    Intent:
+      type: object
+      properties:
+        id: { type: string }
+        state: { type: string, enum: [allowed, pending, approved, denied, edited, expired] }
+        criticity: { $ref: "#/components/schemas/Criticity" }
+        token: { type: string, description: "present on allowed/approved" }
+        decision:
+          type: object
+          properties:
+            by: { type: string }
+            at: { type: string, format: date-time }
+            decision: { type: string }
+            step: { type: integer }
+            input: { type: string }
+            edited_details: { type: object }

@@ -148,25 +148,36 @@ The developer proposes, the user always sees the final tag.
 
 ```
 xurface/
-├── spec/         the Discernment Event specification (Apache-2.0)
-├── packages/     TypeScript and Python SDKs, framework integrations, MCP helper
-├── skills/       an agent skill for requesting discernment
-├── examples/     runnable end-to-end examples
-└── brand/        logo and marks
+├── spec/           the specifications: Discernment Event, Solution Manifest,
+│                   agent onboarding, self-discovery, rate limits, OpenAPI
+├── packages/
+│   ├── sdk-typescript/   @xurface/sdk (zero-dep, Node 18+)
+│   └── sdk-python/       xurface (stdlib only, Python 3.10+)
+├── toolkit/        create-xurface-sdk scaffolder + how to submit an SDK
+├── registry/       the public SDK registry (add yours by PR)
+├── skills/         the VS Code skill for coding agents (Claude, GPT, ...)
+├── integrations/   activation guides: VS Code, workflow frameworks, on-device
+├── examples/       runnable end-to-end examples
+└── brand/          logo and marks
 ```
 
-The `spec/`, `packages/`, `skills/` and `examples/` folders fill in as the pieces
-land in the open. Want one sooner? Open an issue or a PR.
+Fastest activation for a coding agent in VS Code: drop
+[`skills/xurface/SKILL.md`](skills/xurface/SKILL.md) into `.claude/skills/xurface/`
+and set `XURFACE_SOLUTION_SPEC`. Details in
+[`integrations/`](integrations/README.md).
 
 ## Roadmap
 
-- [x] Discernment Event spec (draft) and brand
-- [ ] TypeScript SDK (`onXurface` / `pushXurface` / `awaitXurface` / `guard`)
-- [ ] Python SDK
+- [x] Specs: Discernment Event, Solution Manifest, agent onboarding,
+      self-discovery, rate limits and discernment budgets, OpenAPI (draft)
+- [x] TypeScript SDK (`declareAgent` / `discoverUser` / `onXurface` / `pushXurface` / `awaitXurface` / `guard`)
+- [x] Python SDK (same surface)
+- [x] SDK toolkit: `create-xurface-sdk` (skills / tools / capabilities) + registry + submission path
+- [x] VS Code skill for coding agents (Claude, GPT, ...)
 - [ ] MCP server helper and example tools server
 - [ ] Framework integrations: Anthropic, OpenAI, Google, Mistral, NVIDIA, LangChain
 - [ ] Community criticity rule packs
-- [ ] Skills and translations
+- [ ] Translations
 
 ## Contributing
 

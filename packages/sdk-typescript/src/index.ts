@@ -90,11 +90,19 @@ export interface Intent {
 export interface RateLimitInfo { limit?: number; remaining?: number; reset?: number }
 
 export class XurfaceError extends Error {
-  constructor(message: string, public status?: number, public body?: unknown) { super(message); }
+  status?: number;
+  body?: unknown;
+  constructor(message: string, status?: number, body?: unknown) {
+    super(message);
+    this.status = status;
+    this.body = body;
+  }
 }
 export class XurfaceRateLimited extends XurfaceError {
-  constructor(public retryAfterMs: number, body?: unknown) {
+  retryAfterMs: number;
+  constructor(retryAfterMs: number, body?: unknown) {
     super(`rate limited, retry in ${retryAfterMs}ms`, 429, body);
+    this.retryAfterMs = retryAfterMs;
   }
 }
 

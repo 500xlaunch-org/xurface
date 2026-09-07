@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-xurface/__init__.py
-xurface/client.py
-xurface.egg-info/PKG-INFO
-xurface.egg-info/SOURCES.txt
-xurface.egg-info/dependency_links.txt
-xurface.egg-info/top_level.txt

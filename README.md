@@ -40,8 +40,8 @@ use and extend.
 
 <a id="status"></a>
 > **Status: early, and moving fast.** The SDKs and integrations are landing in the
-> open, right here. The examples below show the shape of the integration; packages
-> are not on npm or PyPI yet. **This is a contribution point** and help is wanted,
+> open, right here. The Python SDK is live on PyPI (`pip install xurface`); the npm
+> packages (`@xurface/sdk`, `create-xurface-sdk`) are landing next. **This is a contribution point** and help is wanted,
 > see [Contributing](#contributing).
 
 ## Contents

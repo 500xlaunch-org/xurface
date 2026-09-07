@@ -1,3 +1,12 @@
+Metadata-Version: 2.4
+Name: xurface
+Version: 0.1.0
+Summary: Xurface SDK: discernment for AI agents. Manifest in, three calls out.
+License: Apache-2.0
+Project-URL: Homepage, https://github.com/500xlaunch-org/xurface
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
 # xurface (Python)
 
 Discernment for AI agents. Manifest in, three calls out. Standard library only,
@@ -31,8 +40,4 @@ except XurfaceDenied:
     ...  # the user said no; deny always denies the whole sequence
 ```
 
-```bash
-pip install xurface
-```
-
-Live on PyPI: https://pypi.org/project/xurface/
+Not on PyPI yet (early): `pip install git+https://github.com/500xlaunch-org/xurface#subdirectory=packages/sdk-python`.

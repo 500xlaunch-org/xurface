@@ -6,6 +6,10 @@ A **Discernment Event** records a single moment where an AI agent's intended
 action is weighed, and either allowed automatically or decided by a human. It is
 the unit of the Xurface audit trail and the contract any framework can implement.
 
+The platform that evaluates events and holds the record is **Horizon**. The human
+decides in the **Xurface Discern** app. Developers onboard an **Agentic Solution**
+into Horizon; the objects below are what that involves.
+
 ## Objects
 
 ### Solution

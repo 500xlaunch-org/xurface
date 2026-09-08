@@ -1,6 +1,6 @@
 {
   "name": "create-xurface-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffold a skills-, tools- or capabilities-based Xurface SDK from a Horizon Solution Manifest.",
   "license": "Apache-2.0",
   "type": "module",

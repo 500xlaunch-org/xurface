@@ -21,4 +21,4 @@ from .client import (
 )
 
 __all__ = ["Xurface", "XurfaceError", "XurfaceDenied", "XurfaceRateLimited"]
-__version__ = "0.1.0"
+__version__ = "0.1.1"

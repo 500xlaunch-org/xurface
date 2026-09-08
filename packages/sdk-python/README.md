@@ -17,12 +17,13 @@
 ---
 
 AI agents now act for people around the clock. They pay, publish, deploy and
-delete. Passwords, passkeys and 2FA prove *who is calling* — they can't answer
+delete. Passwords, passkeys and 2FA prove *who is calling*. They can't answer
 *should this happen*. **Xurface is the layer that asks.**
 
-Your agent classifies each action. Routine ones pass and are logged. The ones
-that matter are pushed to the person's phone; they approve, deny or edit; your
-agent resumes with a signed, audited decision. Standard library only, Python 3.10+.
+You declare what your agent can do; Horizon scores the risk; the user's appetite
+decides. Routine actions pass and are logged. The ones that matter are pushed to
+the person's phone; they approve, deny or edit; your agent resumes with a signed,
+audited decision. You never hard-code a threshold. Standard library only, Python 3.10+.
 
 ## Install
 
@@ -36,15 +37,23 @@ pip install xurface
 from xurface import Xurface, XurfaceDenied
 
 xf = Xurface.from_spec()                       # the manifest you downloaded from Horizon
+
+# declare once: you name the abilities, Horizon scores their risk.
+# developer_risk is optional and only ever raises a score.
+xf.declare_agent("billing-bot", abilities=[
+    {"key": "pay_invoice", "kind": "capability", "developer_risk": {"financial": "HIGH"}},
+])
+
 try:
     ok = xf.guard(user=user, agent="billing-bot",
                   capability="pay_invoice", details={"amount": 2400, "currency": "USD"})
-    # ok["state"] is "allowed" or "approved"
+    # ok["state"] is "allowed" or "approved"; ok["severity"]/["risk"]/["reasons"] say why
 except XurfaceDenied:
     ...  # the person said no; deny always denies the whole sequence
 ```
 
-`guard()` is classify → push → wait, in one. Force-pushes, deploys, payments and
+`guard()` is evaluate → push → wait, in one: Horizon scores the action, reconciles
+it with the user's appetite, and decides. Force-pushes, deploys, payments and
 deletes now stop for a human when they should, and only when they should.
 
 ## What the person sees
@@ -53,7 +62,7 @@ deletes now stop for a human when they should, and only when they should.
   <img src="https://raw.githubusercontent.com/500xlaunch-org/xurface/main/docs/assets/discern.png" alt="A Xurface Discern notification: the solution, the agent, the steps needing discernment, and Approve / Approve all / Deny" width="72%">
 </p>
 
-One inbox — **Xurface Discern** — for every agent from every vendor. Approve one
+One inbox, **Xurface Discern**, for every agent from every vendor. Approve one
 step, approve the whole sequence, or deny. Sequences and one-shot input requests
 are built in. Their passwords, passkeys and 2FA never leave their control.
 

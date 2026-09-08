@@ -3,14 +3,37 @@ info:
   title: Xurface Horizon API
   version: "1.0-draft"
   description: >
-    The Horizon platform API surface an agent uses: OAuth-like credentials from a
-    Solution Manifest, agent declaration, user self-discovery, and the discernment
-    lifecycle (onXurface, pushXurface, awaitXurface). Rate limits and discernment
-    budgets apply; see spec/rate-limits.md.
+    The Horizon platform API. Developers declare what their agents can do;
+    Horizon scores the risk against a standards-based taxonomy; users set a
+    discernment appetite; at runtime Horizon reconciles the two (onXurface,
+    pushXurface, awaitXurface). Users close the loop with flags and reports;
+    platform roles (admin, developer, security, support) monitor and support.
+    Rate limits and discernment budgets apply; see spec/rate-limits.md.
   license: { name: Apache-2.0 }
 servers:
   - url: https://xurface.500xlaunch.com
 paths:
+  /v1/risk/taxonomy:
+    get:
+      summary: The public risk taxonomy Horizon scores against
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key: { $ref: "#/components/schemas/RiskCategory" }
+                        label: { type: string }
+                        maps: { type: string, description: "NIST / ISO control families" }
+                  severities:
+                    type: array
+                    items: { $ref: "#/components/schemas/Severity" }
   /oauth/token:
     post:
       summary: Exchange Solution credentials for a short-lived access token
@@ -37,7 +60,7 @@ paths:
                   expires_in: { type: integer }
   /v1/agents/{agentId}:
     put:
-      summary: Declare an agent (identity + abilities), idempotent
+      summary: Declare an agent (identity + abilities); Horizon scores them. Idempotent
       security: [{ bearer: [] }]
       parameters:
         - { name: agentId, in: path, required: true, schema: { type: string } }
@@ -47,7 +70,7 @@ paths:
             schema: { $ref: "#/components/schemas/AgentDeclaration" }
       responses:
         "200":
-          description: Effective criticities as normalized by Horizon
+          description: Effective per-category risk and severity, scored by Horizon
           content:
             application/json:
               schema:
@@ -56,12 +79,7 @@ paths:
                   agent: { type: string, description: "public id agt_..." }
                   abilities:
                     type: array
-                    items:
-                      type: object
-                      properties:
-                        key: { type: string }
-                        criticity: { $ref: "#/components/schemas/Criticity" }
-                        status: { type: string, enum: [accepted, raised, lowered] }
+                    items: { $ref: "#/components/schemas/ScoredAbility" }
   /v1/discovery/users:
     post:
       summary: Find the Xurface user behind a Solution-side user id
@@ -89,10 +107,10 @@ paths:
                   status: { type: string, enum: [linked, pending, none] }
                   user: { type: string, description: "pairwise id xid_..." }
                   link: { type: string }
-                  threshold: { $ref: "#/components/schemas/Criticity" }
+                  appetite: { $ref: "#/components/schemas/RiskProfile" }
   /v1/intents:
     post:
-      summary: onXurface. Classify an action (or sequence) and evaluate the rule
+      summary: onXurface. Score an action (or sequence) and reconcile with the appetite
       security: [{ bearer: [] }]
       requestBody:
         content:
@@ -122,7 +140,40 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Intent" }
-  /v1/intents/{id}/decide:
+  /v1/side-effects:
+    get:
+      summary: Flags and reports users raised on this Solution (developer feedback)
+      security: [{ bearer: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  side_effects:
+                    type: array
+                    items: { $ref: "#/components/schemas/SideEffect" }
+  /v1/limits:
+    get:
+      summary: Current rate limits and discernment budgets for this Solution
+      security: [{ bearer: [] }]
+      responses: { "200": { description: limits snapshot } }
+
+  /v1/user/links/{linkId}/appetite:
+    post:
+      summary: Set or adjust the user's discernment appetite for a Solution
+      security: [{ bearer: [] }]
+      parameters: [{ name: linkId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appetite: { $ref: "#/components/schemas/RiskProfile" }
+      responses: { "200": { description: updated appetite } }
+  /v1/user/intents/{id}/decide:
     post:
       summary: Record the user's decision (called by Xurface Discern)
       security: [{ bearer: [] }]
@@ -138,17 +189,137 @@ paths:
                 step: { type: integer, description: "approve applies to one step" }
                 input: { type: string, description: "answer to an input request" }
                 edited_details: { type: object }
+                biometric: { type: boolean, description: "required for SEVERE" }
       responses: { "200": { description: decision recorded } }
-  /v1/limits:
-    get:
-      summary: Current rate limits and discernment budgets for this Solution
+  /v1/user/flag:
+    post:
+      summary: Flag a declared action that was mis-scored or ignored the appetite
       security: [{ bearer: [] }]
-      responses: { "200": { description: limits snapshot } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent_id, reason]
+              properties:
+                intent_id: { type: string }
+                reason: { type: string }
+                suggested: { $ref: "#/components/schemas/RiskProfile" }
+      responses: { "201": { description: side effect recorded } }
+  /v1/user/report:
+    post:
+      summary: Report an action the agent took that was never declared
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [solution_uid, reason]
+              properties:
+                solution_uid: { type: string }
+                agent_id: { type: string }
+                capability: { type: string }
+                intent_id: { type: string }
+                reason: { type: string }
+      responses: { "201": { description: side effect recorded } }
+
+  /v1/account/signup:
+    post:
+      summary: Create a platform account (first account is admin)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+                name: { type: string }
+      responses: { "201": { description: account and token } }
+  /v1/account/login:
+    post:
+      summary: Log in to a platform account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string } }
+      responses: { "200": { description: account and token } }
+  /v1/console/solutions:
+    post:
+      summary: Register a Solution and get its manifest (developer or admin)
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, name]
+              properties:
+                slug: { type: string }
+                name: { type: string }
+                description: { type: string }
+                icon: { type: string, format: uri }
+      responses: { "201": { description: Solution Manifest (xurface-solution.json) } }
+  /v1/console/side-effects:
+    get:
+      summary: Side effects across the account's Solutions (all, for security/admin)
+      security: [{ bearer: [] }]
+      responses: { "200": { description: side effects list } }
+  /v1/console/tickets:
+    get:
+      summary: Support tickets visible to the account
+      security: [{ bearer: [] }]
+      responses: { "200": { description: tickets list } }
+    post:
+      summary: Open a support ticket (developer, security or admin)
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, body]
+              properties:
+                category: { type: string, enum: [billing, technical, security, abuse, other] }
+                severity: { type: string, enum: [low, medium, high, urgent] }
+                subject: { type: string }
+                body: { type: string }
+                solution_uid: { type: string }
+      responses: { "201": { description: ticket opened } }
+  /v1/console/tickets/{id}/status:
+    post:
+      summary: Set a ticket status (support or admin)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { status: { type: string, enum: [open, in_progress, resolved] } }
+      responses: { "200": { description: ticket updated } }
+  /v1/console/monitor:
+    get:
+      summary: Platform monitor and recent audit (security or admin)
+      security: [{ bearer: [] }]
+      responses: { "200": { description: monitor snapshot } }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
   schemas:
-    Criticity: { type: string, enum: [LOW, MEDIUM, HIGH, SEVERE] }
+    Severity: { type: string, enum: [LOW, MEDIUM, HIGH, SEVERE] }
+    RiskCategory:
+      type: string
+      enum: [identity, financial, location, intellectual, conversation, data, system]
+    RiskProfile:
+      type: object
+      description: Per-category severity map. Absent category means not touched.
+      additionalProperties: { $ref: "#/components/schemas/Severity" }
+    DiscernmentPolicy: { type: string, enum: [auto, always, never] }
     AgentDeclaration:
       type: object
       required: [name]
@@ -161,14 +332,28 @@ components:
           type: array
           items:
             type: object
-            required: [key, kind, criticity]
+            required: [key, kind]
             properties:
               key: { type: string }
               kind: { type: string, enum: [skill, tool, capability] }
-              criticity: { $ref: "#/components/schemas/Criticity" }
               description: { type: string }
               requires_auth: { type: array, items: { type: string } }
               schema: { type: object }
+              developer_risk:
+                description: Optional. A single severity or a per-category map. Only raises.
+                oneOf:
+                  - { $ref: "#/components/schemas/Severity" }
+                  - { $ref: "#/components/schemas/RiskProfile" }
+              discernment: { $ref: "#/components/schemas/DiscernmentPolicy" }
+    ScoredAbility:
+      type: object
+      properties:
+        key: { type: string }
+        kind: { type: string, enum: [skill, tool, capability] }
+        risk: { $ref: "#/components/schemas/RiskProfile" }
+        severity: { $ref: "#/components/schemas/Severity" }
+        risk_source: { type: string, enum: [developer, horizon, blended] }
+        discernment: { $ref: "#/components/schemas/DiscernmentPolicy" }
     IntentRequest:
       type: object
       required: [user, agent, capability]
@@ -191,7 +376,9 @@ components:
       properties:
         id: { type: string }
         state: { type: string, enum: [allowed, pending, approved, denied, edited, expired] }
-        criticity: { $ref: "#/components/schemas/Criticity" }
+        severity: { $ref: "#/components/schemas/Severity" }
+        risk: { $ref: "#/components/schemas/RiskProfile" }
+        reasons: { type: array, items: { type: string } }
         token: { type: string, description: "present on allowed/approved" }
         decision:
           type: object
@@ -202,3 +389,15 @@ components:
             step: { type: integer }
             input: { type: string }
             edited_details: { type: object }
+    SideEffect:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [flag, report] }
+        agentId: { type: string }
+        capability: { type: string }
+        intentId: { type: string }
+        reason: { type: string }
+        suggested: { $ref: "#/components/schemas/RiskProfile" }
+        status: { type: string, enum: [open, acknowledged, resolved] }
+        createdAt: { type: integer }

@@ -21,7 +21,7 @@
   <a href="#what-is-xurface">What</a> &nbsp;·&nbsp;
   <a href="#quickstart">Quickstart</a> &nbsp;·&nbsp;
   <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
-  <a href="#criticity">Criticity</a> &nbsp;·&nbsp;
+  <a href="#risk-and-appetite">Risk &amp; appetite</a> &nbsp;·&nbsp;
   <a href="#contributing">Contributing</a> &nbsp;·&nbsp;
   <a href="spec/discernment-event.md">Spec</a>
 </p>
@@ -40,9 +40,9 @@ use and extend.
 
 <a id="status"></a>
 > **Status: early, and moving fast.** The SDKs and integrations are landing in the
-> open, right here. The Python SDK is live on PyPI (`pip install xurface`); the npm
-> packages (`@xurface/sdk`, `create-xurface-sdk`) are landing next. **This is a contribution point** and help is wanted,
-> see [Contributing](#contributing).
+> open, right here. The Python SDK is live on PyPI (`pip install xurface`) and the
+> npm packages are live (`npm i @xurface/sdk`, `npx create-xurface-sdk`). **This is
+> a contribution point** and help is wanted, see [Contributing](#contributing).
 
 ## Contents
 
@@ -51,7 +51,7 @@ use and extend.
 - [How it works](#how-it-works)
 - [The Xurface SDK](#the-xurface-sdk)
 - [The names](#the-names)
-- [Criticity](#criticity)
+- [Risk and appetite](#risk-and-appetite)
 - [What is in this repo](#what-is-in-this-repo)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -64,10 +64,14 @@ Three names to know: **Xurface** is the product. **Horizon** is the platform whe
 every agent surfaces its discernment intent. **Xurface Discern** is the phone app
 where a person discerns: approves, denies or edits agent actions.
 
-Every agent action is classified by criticity. Below your delegation threshold it
-passes automatically and is logged. Above it, it is pushed to your phone as an
-intent: what, who, how much. You approve, deny or edit, and the agent resumes with
-a signed decision written to an audit trail.
+You do not hand-pick a threshold. The developer **declares** what an agent can do;
+**Horizon scores** the risk of each action across a standards-based taxonomy; the
+user sets a **discernment appetite**. At runtime Horizon reconciles the two, with
+the user as the floor of protection. Routine actions pass and are logged; the ones
+that exceed the appetite are pushed to the phone as an intent (what, who, how
+much). You approve, deny or edit, and the agent resumes with a signed decision
+written to an audit trail. If something still slips through, you flag or report
+it, and the developer sees it.
 
 ## Quickstart
 
@@ -108,9 +112,11 @@ sit on is live today.
 const xf = Xurface.fromSpec();                    // the downloaded manifest
 const ok = await xf.guard({ user, agent, capability, details });
 // ok.state is "allowed" or "approved"; guard throws if the user denies
+// ok.severity and ok.risk carry what Horizon scored and why
 ```
 
-`guard` is classify, push and await in one. Python mirrors it.
+`guard` is evaluate, push and await in one: Horizon scores, reconciles with the
+user's appetite, and decides. Python mirrors it.
 
 ## The Xurface SDK
 
@@ -136,14 +142,21 @@ adding a micro-SDK is the highest-leverage PR here. Scaffold one with
 Developers  ->  Horizon  ->  Users
 ```
 
-- **Developers** onboard an **Agentic Solution** into Horizon. Their Agents disclose
-  what they can do (skills, tools and capabilities). Horizon reports back the
-  severity levels.
-- **Horizon** weighs every action by its severity. Routine actions pass and are
-  logged and audited. High-stakes ones wait for a human. Every decision is signed.
+- **Developers** onboard an **Agentic Solution** into Horizon. Their Agents
+  self-declare what they can do (skills, tools and capabilities). A developer risk
+  evaluation is optional; where it is missing, **Horizon scores the risk** against
+  a NIST/ISO-mapped taxonomy and returns what will need discernment.
+- **Horizon** reconciles each action's score with the user's **appetite**, with the
+  user as the floor of protection. Routine actions pass and are logged and audited;
+  the ones that exceed the appetite wait for a human. Every decision is signed.
 - **Users** get one inbox, **Xurface Discern**, for every agent from every vendor or
-  developer. They approve, deny or edit from a phone. Their means of arbitration and
-  discernment stays theirs.
+  developer. They approve, deny or edit from a phone, set how much they want to be
+  asked, and can flag or report anything after the fact. Their means of arbitration
+  and discernment stays theirs.
+
+Horizon monitors and audits all user, developer and agent actions, with roles
+(admin, developer, security, support) and support tickets. See
+[`spec/roles.md`](spec/roles.md).
 
 ### A two-sided market that compounds
 
@@ -169,16 +182,26 @@ Contributing here, an integration, a rule pack, a skill, is how you push that lo
 | **Agentic Solution** | What a developer registers and onboards into Horizon (an IDE, a web app, a mobile app, a service) with its Agents and their capabilities. |
 | **Discernment Event** | The signed record of one moment where an action was weighed and either auto-allowed or decided by a human. See [`spec/`](spec/discernment-event.md). |
 
-## Criticity
+<a id="risk-and-appetite"></a>
+## Risk and appetite
 
-The developer proposes, the user always sees the final tag.
+You declare abilities; Horizon scores them. Every ability, and every runtime
+action, is scored across a standards-based taxonomy: **identity, financial,
+location, intellectual, conversation, data, systems** (mapped to NIST 800-53 /
+800-63 and ISO/IEC 27001 / 27701, see [`spec/risk-scoring.md`](spec/risk-scoring.md)).
+Each category it touches gets a severity; the action's severity is the highest.
 
-| Level | Typical actions | Behaviour |
+| Severity | Typical actions | Default behaviour |
 |---|---|---|
 | **Low** | read, search, list | passes, logged |
-| **Medium** | draft, small spend within budget | passes in budget, logged |
-| **High** | send, publish, pay above a threshold | waits for the human |
+| **Medium** | draft, small spend within budget, routine messaging | passes, logged |
+| **High** | send, publish, pay, deploy, connect a credential | waits for the human |
 | **Severe** | delete, change access or credentials | waits, with biometric; never delegated |
+
+There is no fixed threshold. The user's **discernment appetite** (per category, the
+severity they will let pass) is the floor: a developer can ask for more discernment
+than the appetite, never quietly less. A developer risk evaluation can only raise a
+score, never lower it. See [`spec/discernment-appetite.md`](spec/discernment-appetite.md).
 
 ## What is in this repo
 
@@ -210,9 +233,11 @@ and set `XURFACE_SOLUTION_SPEC`. Details in
 - [x] Python SDK (same surface)
 - [x] SDK toolkit: `create-xurface-sdk` (skills / tools / capabilities) + registry + submission path
 - [x] VS Code skill for coding agents (Claude, GPT, ...)
+- [x] Risk scoring (NIST/ISO taxonomy), discernment appetite, flag/report side effects
+- [x] Platform roles (admin, developer, security, support) + support tickets
 - [ ] MCP server helper and example tools server
 - [ ] Framework integrations: Anthropic, OpenAI, Google, Mistral, NVIDIA, LangChain
-- [ ] Community criticity rule packs
+- [ ] Community risk rule packs (calibrate the scorer for a domain)
 - [ ] Translations
 
 ## Contributing
@@ -223,8 +248,8 @@ more people.
 
 Great first contributions:
 
-- **Criticity rule packs**: verb to criticity mappings for a domain (billing, email,
-  infra, trading, ...).
+- **Risk rule packs**: verb-and-noun to category/severity mappings that calibrate
+  Horizon's scorer for a domain (billing, email, infra, trading, ...).
 - **Framework and runtime integrations**: wire Xurface into another agent framework.
 - **Event transports**: new mechanisms for push and await.
 - **Examples and skills**: end-to-end samples, or an agent skill for requesting

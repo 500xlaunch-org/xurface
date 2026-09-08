@@ -7,8 +7,10 @@ in Xurface Discern and other developers can learn from your integration.
 
 - [ ] Built with the toolkit or equivalent: manifest-driven, declares its agents,
       guards every consequential ability.
-- [ ] Criticity levels are honest. Underrating criticity to skip discernment is
-      grounds for suspension of the Solution.
+- [ ] Declarations are honest and complete. Horizon scores the risk, so you
+      cannot underrate an action, but you can hide one by not declaring it.
+      Guarding undeclared capabilities, or declaring less than the agent does,
+      is grounds for suspension of the Solution.
 - [ ] No secrets in the package. The Solution Manifest ships to your servers,
       never inside a published SDK.
 - [ ] Respects rate limits and discernment budgets (the stock SDKs do this for
@@ -37,5 +39,7 @@ in Xurface Discern and other developers can learn from your integration.
 4. On merge, the entry is listed and your Solution becomes searchable from
    Xurface Discern's "add a solution" screen.
 
-Removal or suspension: entries that misdeclare criticity, leak secrets, or abuse
-budgets are removed, and the Solution may be suspended platform-side.
+Removal or suspension: entries that hide actions (guard undeclared capabilities,
+or declare less than the agent does), leak secrets, or abuse budgets are removed,
+and the Solution may be suspended platform-side. Users report undeclared actions,
+and Horizon surfaces them.

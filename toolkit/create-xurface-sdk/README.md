@@ -4,7 +4,7 @@
 
 <h1 align="center">create-xurface-sdk</h1>
 
-<p align="center"><b>Scaffold a Xurface SDK in one command.</b><br/>Give your agents discernment — skills, tools or capabilities — from a downloaded Horizon manifest.</p>
+<p align="center"><b>Scaffold a Xurface SDK in one command.</b><br/>Give your agents discernment (skills, tools or capabilities) from a downloaded Horizon manifest.</p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/create-xurface-sdk"><img alt="npm" src="https://img.shields.io/npm/v/create-xurface-sdk?color=3B6EA3&label=npm"></a>
@@ -17,7 +17,7 @@
 
 **Xurface** is the discernment layer for AI agents: routine actions pass and are
 logged, the ones that matter go to a person's phone. This tool generates a ready
-project that wires your agents into it — no boilerplate to write.
+project that wires your agents into it, with no boilerplate to write.
 
 ## Use it
 
@@ -25,7 +25,7 @@ project that wires your agents into it — no boilerplate to write.
 npx create-xurface-sdk@latest my-sdk --kind tools --lang ts --spec ./xurface-solution.json
 ```
 
-- `--kind` &nbsp;`skills` · `tools` · `capabilities` — match how your agent works
+- `--kind` &nbsp;`skills` · `tools` · `capabilities`: match how your agent works
 - `--lang` &nbsp;`ts` · `py`
 - `--spec` &nbsp;the `xurface-solution.json` you downloaded from the Horizon console
 
@@ -34,7 +34,7 @@ action, and is ready to run and submit:
 
 ```
 my-sdk/
-├── xurface.yaml       your agents + abilities, criticity per ability
+├── xurface.yaml       your agents + abilities (you declare; Horizon scores)
 ├── src/index.ts       declaration + guard() wired around each ability
 ├── skills/SKILL.md     (skills kind) instructions a coding agent can load
 └── README.md
@@ -51,7 +51,7 @@ my-sdk/
 `create-xurface-sdk` is how the **meta-SDK** grows: scaffold a micro-SDK for a
 new IDE or framework, then submit it to the
 [registry](https://github.com/500xlaunch-org/xurface/blob/main/registry/index.json).
-That is the highest-leverage contribution to Xurface — teach one more surface to
+That is the highest-leverage contribution to Xurface: teach one more surface to
 route discernment, and reach every person already carrying the app. Don't miss
 being early to the layer every agent will need.
 

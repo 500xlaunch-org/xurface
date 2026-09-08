@@ -6,17 +6,20 @@ import { Xurface, XurfaceError } from "../../packages/sdk-typescript/src/index.t
 
 const xf = Xurface.fromSpec();
 
-// declare once: identity + what this agent can do on behalf of the user
-await xf.declareAgent("coding-agent", {
+// declare once: identity + what this agent can do. No criticity: you declare
+// the abilities, Horizon scores their risk. developer_risk is optional.
+const declared = await xf.declareAgent("coding-agent", {
   displayName: "Coding Agent",
   description: "Maintains your repositories while you are away.",
   abilities: [
-    { key: "git.commit", kind: "tool", criticity: "LOW", description: "Commit on a branch" },
-    { key: "git.open_pr", kind: "tool", criticity: "MEDIUM", description: "Open a pull request" },
-    { key: "git.force_push", kind: "tool", criticity: "HIGH", description: "Force-push a branch" },
-    { key: "repo.delete", kind: "tool", criticity: "SEVERE", description: "Delete a repository" },
+    { key: "git.commit", kind: "tool", description: "Commit on a branch" },
+    { key: "git.open_pr", kind: "tool", description: "Open a pull request" },
+    { key: "git.force_push", kind: "tool", description: "Force-push a branch" },
+    { key: "repo.delete", kind: "tool", description: "Delete a repository" },
   ],
 });
+// what Horizon scored, per ability: [{ key, severity, risk, risk_source }, ...]
+console.log("scored:", declared.abilities.map((a) => `${a.key}=${a.severity}`).join(" "));
 
 // self-discovery: the email this workspace already knows
 const found = await xf.discoverUser({ type: "email", value: process.env.USER_EMAIL ?? "ada@example.com" });

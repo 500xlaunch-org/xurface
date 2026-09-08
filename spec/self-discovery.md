@@ -34,7 +34,7 @@ Three outcomes:
 
 | Outcome | Response | Meaning |
 |---|---|---|
-| `linked` | `{ "status": "linked", "user": "xid_9f3k...", "threshold": "LOW" }` | An active link exists. Bridge in. |
+| `linked` | `{ "status": "linked", "user": "xid_9f3k...", "appetite": { "financial": "LOW", "conversation": "MEDIUM", ... } }` | An active link exists. Bridge in. |
 | `pending` | `{ "status": "pending", "link": "lnk_..." }` | A match was found; a **link request** is now in the user's Discern inbox. Poll or await. |
 | `none` | `{ "status": "none" }` | No match. Do not retry aggressively; rediscovery is rate limited. |
 
@@ -56,7 +56,8 @@ join their users by comparing ids.
 
 Once linked:
 
-- the agent raises intents against `xid_...` and the user's threshold applies,
-- the user sees the Solution, its agents and abilities grouped by criticity in
-  Discern, with their threshold slider and rules,
+- the agent raises intents against `xid_...` and the user's
+  [appetite](discernment-appetite.md) applies,
+- the user sees the Solution, its agents and abilities grouped by severity in
+  Discern, with a per-category appetite control,
 - revocation propagates immediately; discovery for a revoked link returns `none`.

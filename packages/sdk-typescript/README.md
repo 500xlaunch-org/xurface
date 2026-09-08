@@ -17,12 +17,13 @@
 ---
 
 AI agents now act for people around the clock. They pay, publish, deploy and
-delete. Passwords, passkeys and 2FA prove *who is calling* — they can't answer
+delete. Passwords, passkeys and 2FA prove *who is calling*. They can't answer
 *should this happen*. **Xurface is the layer that asks.**
 
-Your agent classifies each action. Routine ones pass and are logged. The ones
-that matter are pushed to the person's phone; they approve, deny or edit; your
-agent resumes with a signed, audited decision. Zero dependencies, Node 18+.
+You declare what your agent can do; Horizon scores the risk; the user's appetite
+decides. Routine actions pass and are logged. The ones that matter are pushed to
+the person's phone; they approve, deny or edit; your agent resumes with a signed,
+audited decision. You never hard-code a threshold. Zero dependencies, Node 18+.
 
 ## Install
 
@@ -36,14 +37,22 @@ npm i @xurface/sdk
 import { Xurface } from "@xurface/sdk";
 
 const xf = Xurface.fromSpec();                 // the manifest you downloaded from Horizon
+
+// declare once: you name the abilities, Horizon scores their risk.
+// developer_risk is optional and only ever raises a score.
+await xf.declareAgent("billing-bot", { abilities: [
+  { key: "pay_invoice", kind: "capability", developer_risk: { financial: "HIGH" } },
+]});
+
 const ok = await xf.guard({ user, agent: "billing-bot",
   capability: "pay_invoice", details: { amount: 2400, currency: "USD" } });
-// ok.state is "allowed" or "approved" — guard() throws if the person denies
+// ok.state is "allowed" or "approved"; guard() throws if the person denies
+// ok.severity / ok.risk / ok.reasons carry what Horizon scored and why
 ```
 
-`guard()` is classify → push → wait, in one. That's it. Force-pushes, deploys,
-payments and deletes now stop for a human when they should, and only when they
-should.
+`guard()` is evaluate → push → wait, in one: Horizon scores the action, reconciles
+it with the user's appetite, and decides. Force-pushes, deploys, payments and
+deletes now stop for a human when they should, and only when they should.
 
 ## What the person sees
 
@@ -51,7 +60,7 @@ should.
   <img src="https://raw.githubusercontent.com/500xlaunch-org/xurface/main/docs/assets/discern.png" alt="A Xurface Discern notification: the solution, the agent, the steps needing discernment, and Approve / Approve all / Deny" width="72%">
 </p>
 
-One inbox — **Xurface Discern** — for every agent from every vendor. Approve one
+One inbox, **Xurface Discern**, for every agent from every vendor. Approve one
 step, approve the whole sequence, or deny. Sequences and one-shot input requests
 are built in. Their passwords, passkeys and 2FA never leave their control.
 
@@ -63,7 +72,7 @@ the record. Every agent you onboard gives people one more reason to carry the
 app; every person makes your reach a little larger. More developers, more users.
 More users, more developers.
 
-`@xurface/sdk` is the core of a **meta-SDK** — add micro-SDKs only where you need
+`@xurface/sdk` is the core of a **meta-SDK**: add micro-SDKs only where you need
 them (`@xurface/langgraph`, `@xurface/vscode`, `@xurface/mcp`, ...). See the
 [monorepo](https://github.com/500xlaunch-org/xurface).
 

@@ -12,26 +12,30 @@ even when the user is away from the keyboard. The ask reaches their phone
 
 ## When to invoke
 
-Ask for discernment before any action that is hard to reverse or outward-facing:
+You do not judge the stakes yourself, and you do not skip the call because an
+action "feels routine." Route every consequential action through `guard`.
+Horizon scores its risk (identity, financial, location, intellectual,
+conversation, data, systems) and reconciles that with the user's appetite; it
+returns `allowed` (passes instantly, still logged) or pushes it to their phone.
 
-- **HIGH**: send, publish, deploy to production, pay above a threshold,
-  force-push, drop a migration, spend on infrastructure, apply for something in
-  the user's name.
-- **SEVERE**: delete data or repositories, change access, scopes or credentials.
-  SEVERE can never be auto-approved.
+- Hard-to-reverse or outward-facing actions (send, publish, deploy, pay,
+  force-push, drop a migration, apply in the user's name) are the ones most
+  likely to come back as a prompt.
+- **SEVERE** actions (delete, change access, scopes or credentials) can never be
+  auto-approved and require a biometric.
 
-Routine actions (read, search, list, draft) do not need an ask; call `onXurface`
-anyway when in doubt: LOW and MEDIUM pass instantly and are logged, which
-protects you too.
+Never act on a capability you did not declare: it will always ask, and the user
+can report it. Declare it instead.
 
 ## Setup (once per session)
 
 1. The manifest path is in the `XURFACE_SOLUTION_SPEC` environment variable (or
    at `./xurface-solution.json`). If neither exists, tell the user to download
    it from the Horizon console; do not improvise credentials.
-2. Declare yourself once: id, name, logo, description, and your abilities with
-   honest criticities. Use the SDK (`@xurface/sdk` or `xurface` on Python), or
-   raw REST per `spec/openapi.yaml`.
+2. Declare yourself once: id, name, logo, description, and your abilities. You do
+   not set a criticity; Horizon scores each ability and returns its severity.
+   Declare everything you can do, honestly. Use the SDK (`@xurface/sdk` or
+   `xurface` on Python), or raw REST per `spec/openapi.yaml`.
 3. Discover the user from the id the workspace gives you (usually an email).
    `status: "none"` means the user is not on Xurface; say so and stop asking.
 

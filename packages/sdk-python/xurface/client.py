@@ -28,7 +28,13 @@ class XurfaceRateLimited(XurfaceError):
 
 
 class Xurface:
-    """Discernment for AI agents. Built from a Horizon Solution Manifest."""
+    """Discernment for AI agents. Built from a Horizon Solution Manifest.
+
+    You declare what your agents can do (skills, tools, capabilities). Horizon
+    scores the risk across its taxonomy. The user's appetite decides what needs
+    discernment. You never hard-code a threshold. `developer_risk` per ability
+    is optional; omit it and Horizon scores the ability itself.
+    """
 
     def __init__(self, spec: Optional[dict] = None, spec_path: Optional[str] = None,
                  retry_on_rate_limit: bool = True):
@@ -114,7 +120,10 @@ class Xurface:
     def declare_agent(self, agent_id: str, display_name: Optional[str] = None,
                       logo: Optional[str] = None, description: Optional[str] = None,
                       abilities: Optional[list[dict]] = None) -> dict:
-        """Declare the agent: identity + what it can do on behalf of the user."""
+        """Declare the agent: identity + what it can do (skills, tools,
+        capabilities). Each ability needs only ``key`` and ``kind``;
+        ``developer_risk`` and ``discernment`` are optional. Horizon scores every
+        ability and returns the effective per-category risk and severity."""
         return self._api("PUT", f"/agents/{agent_id}", {
             "name": agent_id, "display_name": display_name, "logo": logo,
             "description": description, "abilities": abilities or [],
@@ -154,12 +163,23 @@ class Xurface:
     def guard(self, user: str, agent: str, capability: str,
               details: Optional[dict] = None, sequence: Optional[list[dict]] = None,
               timeout_s: float = 300.0) -> dict:
-        """The three calls in one. Raises XurfaceDenied if the user denies."""
-        risk = self.on_xurface(user, agent, capability, details, sequence)
-        if risk.get("state") == "allowed":
-            return risk
-        self.push_xurface(risk["id"])
-        decided = self.await_xurface(risk["id"], timeout_s)
+        """The three calls in one. Horizon returns the dynamic verdict (its score
+        reconciled with the user's appetite); routine actions come back
+        ``allowed``, the rest are pushed and waited on. Raises XurfaceDenied if
+        the user denies. The returned intent carries ``severity``, ``risk`` and
+        ``reasons``."""
+        verdict = self.on_xurface(user, agent, capability, details, sequence)
+        if verdict.get("state") == "allowed":
+            return verdict
+        self.push_xurface(verdict["id"])
+        decided = self.await_xurface(verdict["id"], timeout_s)
         if decided.get("state") == "denied":
             raise XurfaceDenied(f"denied by the user: {capability}", 403, decided)
         return decided
+
+    def side_effects(self) -> dict:
+        """What users flagged or reported on this Solution. A ``flag`` means a
+        declared action was mis-scored or ignored the user's appetite; a
+        ``report`` means the agent did something it never declared. Calibrate
+        your declarations from these."""
+        return self._api("GET", "/side-effects")

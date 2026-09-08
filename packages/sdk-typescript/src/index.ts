@@ -1,13 +1,25 @@
 /**
  * Xurface SDK for TypeScript.
  *
- * Manifest in, three calls out:
+ * You declare what your agents can do. Horizon scores the risk. The user's
+ * appetite decides what needs discernment. You never hard-code a threshold:
  *
- *   const xf = await Xurface.fromSpec("./xurface-solution.json");
- *   await xf.declareAgent("apply-bot", { displayName: "Apply Bot", abilities: [...] });
+ *   const xf = Xurface.fromSpec("./xurface-solution.json");
+ *
+ *   // self-declare: skills, tools, capabilities. developer_risk is OPTIONAL.
+ *   await xf.declareAgent("apply-bot", { displayName: "Apply Bot", abilities: [
+ *     { key: "offers.scan", kind: "skill" },
+ *     { key: "reply.send",  kind: "tool" },
+ *     { key: "pay.invoice", kind: "capability", developer_risk: { financial: "HIGH" } },
+ *   ]});
+ *
  *   const { user } = await xf.discoverUser({ type: "email", value: "ada@example.com" });
- *   const ok = await xf.guard({ user, agent: "apply-bot", capability: "reply.send",
- *                               details: { to: "hr@corp.com" } });
+ *
+ *   // runtime: just do the thing behind guard(). Horizon already knows the
+ *   // scores and this user's appetite, and returns the decision.
+ *   const ok = await xf.guard({ user, agent: "apply-bot", capability: "pay.invoice",
+ *                               details: { amount: 2400, currency: "USD" } });
+ *   // ok.state is "allowed" | "approved" | "edited"; guard() throws on deny.
  *
  * Zero dependencies. Node 18+ (global fetch).
  * License: Apache-2.0.
@@ -15,8 +27,24 @@
 
 import { readFileSync } from "node:fs";
 
-export type Criticity = "LOW" | "MEDIUM" | "HIGH" | "SEVERE";
+export type Severity = "LOW" | "MEDIUM" | "HIGH" | "SEVERE";
+
+/** The categories Horizon scores every ability against (NIST / ISO informed). */
+export type RiskCategory =
+  | "identity" | "financial" | "location" | "intellectual" | "conversation" | "data" | "system";
+
+/** A per-category severity map. Absent category means "not touched". Used for a
+ * developer's optional risk evaluation, Horizon's score, and the user's appetite. */
+export type RiskProfile = Partial<Record<RiskCategory, Severity>>;
+export type Appetite = RiskProfile;
+
 export type AbilityKind = "skill" | "tool" | "capability";
+
+/** Whether an ability always asks, or lets Horizon decide against the user's
+ * appetite. "never" is a request to suppress asking; it is honoured only where
+ * the user's appetite already tolerates the score (the user is the floor). */
+export type DiscernmentPolicy = "auto" | "always" | "never";
+
 export type IntentState = "allowed" | "pending" | "approved" | "denied" | "edited" | "expired";
 
 /** The downloaded Horizon Solution Manifest (xurface-solution.json). */
@@ -31,20 +59,36 @@ export interface SolutionSpec {
   signature?: string;
 }
 
-export interface Ability {
+/** What you declare per ability. Only key and kind are required; in particular
+ * developer_risk is optional. Omit it and Horizon scores the ability itself. */
+export interface AbilityDeclaration {
   key: string;
   kind: AbilityKind;
-  criticity: Criticity;
   description?: string;
   requires_auth?: string[];
   schema?: Record<string, unknown>;
+  /** optional: your own risk evaluation. Horizon holds its score as a floor and
+   * blends by taking the higher severity per category, so this can only raise. */
+  developer_risk?: RiskProfile | Severity;
+  /** optional: adjust when this asks. Bounded by the user's appetite. */
+  discernment?: DiscernmentPolicy;
 }
 
 export interface AgentDeclaration {
   displayName?: string;
   logo?: string;
   description?: string;
-  abilities?: Ability[];
+  abilities?: AbilityDeclaration[];
+}
+
+/** What Horizon returns for each declared ability: the effective score. */
+export interface ScoredAbility {
+  key: string;
+  kind: AbilityKind;
+  risk: RiskProfile;
+  severity: Severity;
+  risk_source: "developer" | "horizon" | "blended";
+  discernment: DiscernmentPolicy;
 }
 
 export interface UserRef { type: "email" | "phone" | "external_id"; value: string }
@@ -53,7 +97,7 @@ export interface DiscoveryResult {
   status: "linked" | "pending" | "none";
   user?: string;      // pairwise id xid_...
   link?: string;
-  threshold?: Criticity;
+  appetite?: Appetite;
 }
 
 export interface SequenceStep {
@@ -82,9 +126,26 @@ export interface Decision {
 export interface Intent {
   id: string;
   state: IntentState;
-  criticity: Criticity;
-  token?: string;     // present on allowed/approved
+  severity: Severity;         // max across categories Horizon scored
+  risk: RiskProfile;          // what it touched, per category
+  reasons: string[];          // why it was allowed or pushed
+  token?: string;             // present on allowed/approved
   decision?: Decision;
+}
+
+/** A user's after-the-fact signal on your Solution. A `flag` means a declared
+ * action was mis-scored or ignored their appetite; a `report` means the agent
+ * did something it never declared. */
+export interface SideEffect {
+  id: string;
+  type: "flag" | "report";
+  agentId?: string;
+  capability?: string;
+  intentId?: string;
+  reason: string;
+  suggested?: RiskProfile;
+  status: "open" | "acknowledged" | "resolved";
+  createdAt: number;
 }
 
 export interface RateLimitInfo { limit?: number; remaining?: number; reset?: number }
@@ -188,9 +249,10 @@ export class Xurface {
 
   // -- onboarding ------------------------------------------------------------
 
-  /** Declare the agent: identity + what it can do on behalf of the user. Idempotent. */
+  /** Declare the agent: identity + what it can do. Horizon scores each ability
+   * and returns the effective per-category risk and severity. Idempotent. */
   declareAgent(agentId: string, decl: AgentDeclaration) {
-    return this.call<{ agent: string; abilities: Array<{ key: string; criticity: Criticity; status: string }> }>(
+    return this.call<{ agent: string; abilities: ScoredAbility[] }>(
       "PUT", `/agents/${encodeURIComponent(agentId)}`, {
         name: agentId,
         display_name: decl.displayName,
@@ -207,7 +269,8 @@ export class Xurface {
 
   // -- the three calls -------------------------------------------------------
 
-  /** onXurface: classify the action (or sequence) and evaluate the one rule. */
+  /** onXurface: evaluate the action (or sequence) against Horizon's scores and
+   * the user's appetite. Returns the dynamic verdict (allowed or pending). */
   onXurface(req: IntentRequest) {
     return this.call<Intent>("POST", "/intents", req);
   }
@@ -231,14 +294,22 @@ export class Xurface {
 
   /** guard: the three calls in one. Returns the decided intent or throws on deny. */
   async guard(req: IntentRequest, opts?: { timeoutMs?: number }): Promise<Intent> {
-    const risk = await this.onXurface(req);
-    if (risk.state === "allowed") return risk;
-    await this.pushXurface(risk.id);
-    const decided = await this.awaitXurface(risk.id, opts);
+    const verdict = await this.onXurface(req);
+    if (verdict.state === "allowed") return verdict;
+    await this.pushXurface(verdict.id);
+    const decided = await this.awaitXurface(verdict.id, opts);
     if (decided.state === "denied") {
       throw new XurfaceError(`denied by the user: ${req.capability}`, 403, decided);
     }
     return decided;
+  }
+
+  // -- the feedback loop -----------------------------------------------------
+
+  /** Side effects: what users flagged or reported on this Solution. Calibrate
+   * your declarations from these; a `report` is an undeclared action. */
+  sideEffects() {
+    return this.call<{ side_effects: SideEffect[] }>("GET", "/side-effects");
   }
 }
 

@@ -26,13 +26,23 @@ Flagship product of the portfolio (Dominion is second).
 
 ## The product in one rule
 
+The developer declares abilities; Horizon scores their risk; the user sets an
+appetite. No fixed threshold, the user is the floor of protection:
+
 ```
-if intent.criticity <= link.threshold  -> allow, mint token, log
-else                                    -> push to phone, wait, log decision
+if severity == SEVERE                              -> discern (biometric, never delegated)
+elif developer policy == "always"                  -> discern
+elif any category score exceeds the user appetite  -> discern
+else                                               -> allow, mint token, log
 ```
 
-Criticity: LOW / MEDIUM / HIGH / SEVERE. SEVERE always pushes, needs a biometric
-assertion, and can never be delegated.
+Severity: LOW / MEDIUM / HIGH / SEVERE, the max across the risk categories an
+action touches (identity, financial, location, intellectual, conversation, data,
+systems; NIST/ISO mapped). A developer risk evaluation is optional and only ever
+raises a score. After the fact a user can flag (declared but mis-scored) or report
+(undeclared); developers see these. Platform roles: admin, developer, security,
+support. See `spec/risk-scoring.md`, `spec/discernment-appetite.md`,
+`spec/side-effects.md`, `spec/roles.md`.
 
 ## The three endpoints
 

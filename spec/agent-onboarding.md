@@ -43,43 +43,53 @@ PUT /v1/agents/{agent_id}
 `agent_id` is chosen by the developer and stable across restarts. Horizon assigns
 the public id (`agt_...`) on first declaration.
 
-## 3. Declare what it can do on behalf of the user
+## 3. Declare what it can do; Horizon scores the risk
 
 The same endpoint carries the agent's abilities. An ability is a **skill**, a
 **tool** or a **capability** (see the [toolkit](../toolkit/README.md) for the three
-SDK shapes), each with a proposed criticity:
+SDK shapes). You declare it. Only `key` and `kind` are required; a risk
+evaluation is **optional**:
 
 ```
 PUT /v1/agents/{agent_id}
 { ...identity...,
   "abilities": [
-    { "key": "gmail.connect",  "kind": "capability", "criticity": "HIGH",
+    { "key": "gmail.connect", "kind": "capability",
       "description": "Connect to Gmail (read)", "requires_auth": ["mail.gmail"] },
-    { "key": "offers.scan",    "kind": "skill",      "criticity": "LOW",
+    { "key": "offers.scan",   "kind": "skill",
       "description": "Scan inbox for job offers" },
-    { "key": "reply.draft",    "kind": "tool",       "criticity": "MEDIUM",
+    { "key": "reply.draft",   "kind": "tool",
       "description": "Draft replies to good matches" },
-    { "key": "reply.send",     "kind": "tool",       "criticity": "HIGH",
+    { "key": "reply.send",    "kind": "tool",
       "description": "Send the replies",
-      "schema": { "type": "object", "properties": { "to": {"type":"string"} } } }
+      "schema": { "type": "object", "properties": { "to": {"type":"string"} } },
+      "discernment": "always" },
+    { "key": "pay.invoice",   "kind": "capability",
+      "description": "Pay an invoice",
+      "developer_risk": { "financial": "HIGH" } }
   ] }
 ```
 
-**Horizon reports back the severity levels.** The platform normalizes each
-proposed criticity against its verb rules and the Solution's category, and the
-response carries the effective values:
+**Horizon scores every ability** against the [risk taxonomy](risk-scoring.md) and
+returns the effective per-category risk, the severity (the max across
+categories), and where the score came from. If you passed `developer_risk`,
+Horizon holds its own score as a floor and blends by taking the higher severity
+per category, so your evaluation can only raise:
 
 ```
 -> { "agent": "agt_01H7Q3F8", "abilities": [
-     { "key": "gmail.connect", "criticity": "HIGH",   "status": "accepted" },
-     { "key": "offers.scan",   "criticity": "LOW",    "status": "accepted" },
-     { "key": "reply.draft",   "criticity": "MEDIUM", "status": "accepted" },
-     { "key": "reply.send",    "criticity": "HIGH",   "status": "raised" } ] }
+     { "key": "gmail.connect", "severity": "HIGH",   "risk": { "identity": "HIGH" },                 "risk_source": "horizon", "discernment": "auto" },
+     { "key": "offers.scan",   "severity": "MEDIUM", "risk": { "data": "MEDIUM" },                   "risk_source": "horizon", "discernment": "auto" },
+     { "key": "reply.draft",   "severity": "MEDIUM", "risk": { "intellectual": "MEDIUM" },           "risk_source": "horizon", "discernment": "auto" },
+     { "key": "reply.send",    "severity": "MEDIUM", "risk": { "conversation": "MEDIUM" },           "risk_source": "horizon", "discernment": "always" },
+     { "key": "pay.invoice",   "severity": "HIGH",   "risk": { "financial": "HIGH" },                "risk_source": "horizon", "discernment": "auto" } ] }
 ```
 
-The effective criticity is what users see, and what the
-[one runtime rule](discernment-event.md) evaluates. Raising an ability's criticity
-after publication notifies linked users.
+The scored severity is what users see, and what the runtime rule reconciles
+against their [appetite](discernment-appetite.md). `discernment` is your
+adjustment: `auto` lets Horizon decide, `always` forces a prompt, `never` asks to
+suppress it (honoured only where the user's appetite already tolerates the
+score). Re-declaring with a higher score notifies linked users.
 
 ## 4. Discover the user and bridge in
 

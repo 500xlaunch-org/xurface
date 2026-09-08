@@ -35,7 +35,7 @@ The scaffolder reads your downloaded manifest and generates:
 
 ```
 my-solution-sdk/
-├── xurface.yaml            # your agents + abilities, criticity per ability
+├── xurface.yaml            # your agents + abilities (you declare; Horizon scores)
 ├── src/index.ts            # declaration + guard() wired around each ability
 ├── skills/SKILL.md         # (skills kind) instructions an agent can load
 ├── xurface-solution.json   # NOT committed; .gitignore covers it
@@ -49,13 +49,17 @@ overwrites without `--force`.
 
 1. **Credentials.** The manifest's client id/secret become a short-lived token.
 2. **Declare.** The agent declares itself (id, name, logo, description) and what
-   it can do on behalf of the user. Horizon reports back the severity levels.
+   it can do. You set no criticity; Horizon scores each ability's risk across its
+   [taxonomy](../spec/risk-scoring.md) and returns the severity. `developer_risk`
+   is optional and only raises.
 3. **Discover.** The agent finds the user's Xurface account from the id your
    product already has (email, phone, external id). The user does nothing but
-   log in; their default email and phone self-discover automatically.
-4. **Bridge and ask.** Guarded abilities raise intents; the user approves, denies
-   or edits in Xurface Discern; rate limits and discernment budgets keep the
-   user's attention safe.
+   log in; their default email and phone self-discover automatically, and they
+   set a discernment [appetite](../spec/discernment-appetite.md) (or leave the default).
+4. **Bridge and ask.** Guarded abilities raise intents; Horizon reconciles the
+   score with the user's appetite; the user approves, denies or edits in Xurface
+   Discern. Afterward they can [flag or report](../spec/side-effects.md) and you
+   see it in your Side Effects feed.
 
 ## Submit
 

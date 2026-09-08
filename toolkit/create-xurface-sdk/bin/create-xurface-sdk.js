@@ -49,8 +49,11 @@ mkdirSync(name, { recursive: true });
 
 // ---------------------------------------------------------------- xurface.yaml
 w("xurface.yaml", `# Your Solution's agents and abilities. This is your declaration of record:
-# what your agents can do on behalf of the user, and how much each action matters.
-# Horizon reports back the effective severity levels when the agent declares.
+# what your agents can do on behalf of the user. You do NOT set a criticity;
+# Horizon scores the risk of each ability across its taxonomy and returns the
+# effective severity. 'developer_risk' below is optional and only ever raises a
+# score. 'discernment' lets you force a prompt (always) or, within the user's
+# appetite, suppress one (never). Leave both off to let Horizon and the user decide.
 solution: ${slug}
 agents:
   - id: ${agentId}
@@ -60,12 +63,12 @@ agents:
     abilities:
       - key: example.read
         kind: ${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}
-        criticity: LOW
-        description: A routine action. Passes, logged.
+        description: Read something for the user. Horizon will score this LOW.
       - key: example.commit
         kind: ${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}
-        criticity: HIGH
-        description: A consequential action. Waits for the human.
+        description: A consequential action Horizon will score higher.
+        # developer_risk: { financial: HIGH }   # optional, only raises
+        # discernment: always                   # optional
 `);
 
 // ---------------------------------------------------------------- .gitignore
@@ -92,15 +95,17 @@ if (lang === "ts") {
 // 1. credentials from the downloaded manifest (or XURFACE_SOLUTION_SPEC)
 const xf = Xurface.fromSpec("./xurface-solution.json");
 
-// 2. declare the agent: identity + what it can do on behalf of the user
-await xf.declareAgent("${agentId}", {
+// 2. declare the agent: identity + what it can do. No criticity: Horizon scores
+//    the risk. developer_risk is optional and only ever raises a score.
+const declared = await xf.declareAgent("${agentId}", {
   displayName: "${solName} Agent",
   description: "Acts for the user inside ${solName}.",
   abilities: [
-    { key: "example.read",   kind: "${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}", criticity: "LOW" },
-    { key: "example.commit", kind: "${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}", criticity: "HIGH" },
+    { key: "example.read",   kind: "${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}" },
+    { key: "example.commit", kind: "${kind === "skills" ? "skill" : kind === "tools" ? "tool" : "capability"}" },
   ],
 });
+console.log("Horizon scored:", declared.abilities.map((a) => \`\${a.key}=\${a.severity}\`).join(" "));
 
 // 3. self-discovery: the id your product already has for this user
 const found = await xf.discoverUser({ type: "email", value: process.env.USER_EMAIL ?? "ada@example.com" });
@@ -121,14 +126,16 @@ console.log("decision:", ok.state);
 # 1. credentials from the downloaded manifest (or XURFACE_SOLUTION_SPEC)
 xf = Xurface.from_spec("./xurface-solution.json")
 
-# 2. declare the agent: identity + what it can do on behalf of the user
-xf.declare_agent("${agentId}",
+# 2. declare the agent: identity + what it can do. No criticity: Horizon scores
+#    the risk. developer_risk is optional and only ever raises a score.
+declared = xf.declare_agent("${agentId}",
                  display_name="${solName} Agent",
                  description="Acts for the user inside ${solName}.",
                  abilities=[
-                     {"key": "example.read", "kind": "tool", "criticity": "LOW"},
-                     {"key": "example.commit", "kind": "tool", "criticity": "HIGH"},
+                     {"key": "example.read", "kind": "tool"},
+                     {"key": "example.commit", "kind": "tool"},
                  ])
+print("Horizon scored:", " ".join(f"{a['key']}={a['severity']}" for a in declared["abilities"]))
 
 # 3. self-discovery
 found = xf.discover_user("email", "ada@example.com")
@@ -158,13 +165,17 @@ description: How to request the user's discernment before consequential actions 
 Before any consequential action (send, publish, pay, delete, credential use), do
 not act. Request the user's discernment through Xurface:
 
-1. Ensure the agent is declared (run the SDK's declare step once at start).
+1. Ensure the agent is declared (run the SDK's declare step once at start). You
+   declare the ability; Horizon scores its risk and the user's appetite decides.
 2. Call \`guard\` with the user's pairwise id, this agent's id, the capability
-   key and the human-readable details of what is about to happen.
+   key and the human-readable details of what is about to happen. Do this for
+   every consequential action, even ones you think are routine: Horizon decides.
 3. If the state is \`allowed\` or \`approved\`, proceed. If \`denied\`, stop the
    whole sequence and tell the user's session what was denied. Never retry a
    denied action.
-4. Batch related consequential steps into one sequence instead of many separate
+4. Never act on a capability you did not declare. An undeclared action always
+   asks and the user can report it. Declare it instead.
+5. Batch related consequential steps into one sequence instead of many separate
    asks. The user can Approve one step, Approve all, or Deny (always all).
 `);
 }
@@ -176,7 +187,8 @@ Generated by create-xurface-sdk. Wire-up order:
 
 1. Download your Solution Manifest from the Horizon console and place it at
    \`./xurface-solution.json\` (never commit it).
-2. Edit \`xurface.yaml\`: your agents, their abilities, honest criticities.
+2. Edit \`xurface.yaml\`: your agents and their abilities. You do not set a
+   criticity: Horizon scores the risk. Add \`developer_risk\` only to raise.
 3. ${lang === "ts" ? "`npm install && npm start`" : "`pip install -r requirements.txt && python main.py`"}
 4. Submit it: https://github.com/500xlaunch-org/xurface/blob/main/toolkit/SUBMITTING.md
 

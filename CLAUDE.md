@@ -7,10 +7,11 @@ Flagship product of the portfolio (Dominion is second).
 ## The names (canonical)
 
 - **Xurface** the product and brand.
-- **Horizon** the platform. The bridge every agent routes through; weighs each action
-  by severity, passes/logs/audits the routine ones, pushes the high-stakes ones to a
-  human. Developers onboard their Agentic Solution INTO Horizon.
-- **Xurface Discern** the mobile app. One inbox for every agent from every vendor.
+- **Horizon** the platform where every agent surfaces its discernment intent. Weighs
+  each action by severity, passes/logs/audits the routine ones, pushes the high-stakes
+  ones to a human. Developers onboard their Agentic Solution INTO Horizon.
+- **Xurface Discern** the mobile app where a person discerns: approves, denies or edits
+  agent actions. One inbox for every agent from every vendor.
 - **Xurface Agentic Resources** this repository.
 - **Agentic Solution** the developer's product (an IDE, web app, mobile app, service)
   with its Agents and their skills, tools and capabilities.

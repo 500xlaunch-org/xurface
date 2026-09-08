@@ -5,7 +5,7 @@
 <h1 align="center">Xurface Agentic Resources</h1>
 
 <p align="center">
-  <b>AI agent action moderation, on the go.</b><br/>
+  <b>AI Agent actions discernment, on the GO.</b><br/>
   <i>Beyond human in the loop. Human on the go.</i>
 </p>
 
@@ -49,6 +49,7 @@ use and extend.
 - [What is Xurface](#what-is-xurface)
 - [Quickstart](#quickstart)
 - [How it works](#how-it-works)
+- [The Xurface SDK](#the-xurface-sdk)
 - [The names](#the-names)
 - [Criticity](#criticity)
 - [What is in this repo](#what-is-in-this-repo)
@@ -59,9 +60,9 @@ use and extend.
 
 ## What is Xurface
 
-Three names to know: **Xurface** is the product. **Horizon** is the platform every
-agent routes through. **Xurface Discern** is the phone app where a person approves,
-denies or edits.
+Three names to know: **Xurface** is the product. **Horizon** is the platform where
+every agent surfaces its discernment intent. **Xurface Discern** is the phone app
+where a person discerns: approves, denies or edits agent actions.
 
 Every agent action is classified by criticity. Below your delegation threshold it
 passes automatically and is logged. Above it, it is pushed to your phone as an
@@ -70,29 +71,64 @@ a signed decision written to an audit trail.
 
 ## Quickstart
 
-Framework and skill agnostic. Three calls, or nothing at all if your tools run
-through the Xurface MCP server.
+No boilerplate. The point of Xurface is that your coding agent or your workflow
+gets discernment on the actions that matter from a config drop or a one-line
+install, not a rewrite.
+
+### In your IDE, for coding agents
+
+Give the agent the Xurface skill and a manifest path; it guards the risky moves
+(force-push, deploy, delete, spend) on its own.
+
+- **VS Code / Claude Code** (works today):
+  ```bash
+  mkdir -p .claude/skills/xurface && curl -o .claude/skills/xurface/SKILL.md \
+    https://raw.githubusercontent.com/500xlaunch-org/xurface/main/skills/xurface/SKILL.md
+  export XURFACE_SOLUTION_SPEC=./xurface-solution.json
+  ```
+- **GitHub Codespaces / github.dev** and **Cursor**: the same skill, dropped by a
+  micro-SDK (`npx create-xurface-sdk@latest add codespaces` / `add cursor`).
+  Landing now, see [the meta-SDK](#the-xurface-sdk).
+
+### In your workflow framework
+
+One install, no glue. A micro-SDK wraps the step boundary so every high-stakes
+tool call is guarded and every routine one is logged:
+
+- **LangGraph** &mdash; `pip install xurface-langgraph` (interrupt before the guarded node)
+- **CrewAI** &mdash; `pip install xurface-crewai` (a `@discern` tool decorator)
+- **AutoGen** &mdash; `pip install xurface-autogen` (wrap an agent)
+
+The framework micro-SDKs are landing in `packages/integrations/`; the core they
+sit on is live today.
+
+### By hand, if you prefer
 
 ```ts
-import { Xurface } from "@xurface/sdk";
-
-const xf = new Xurface({ solution: "acme-billing", key: process.env.XURFACE_KEY });
-
-// classify the action, then decide
-const risk = await xf.onXurface({
-  user, agent: "billing-bot",
-  capability: "pay_invoice",
-  details: { amount: 2400, currency: "USD", payee: "Supplier Co" }
-});
-if (risk.state === "allowed") return execute(risk.token);
-
-await xf.pushXurface(risk.id);                 // ping the phone
-const ok = await xf.awaitXurface(risk.id);     // wait for a human
-if (ok.state === "approved") return execute(ok.token, ok.editedDetails);
+const xf = Xurface.fromSpec();                    // the downloaded manifest
+const ok = await xf.guard({ user, agent, capability, details });
+// ok.state is "allowed" or "approved"; guard throws if the user denies
 ```
 
-Python mirrors the same surface. Prefer one call? `xf.guard(capability, details, fn)`
-wraps classify, push and await.
+`guard` is classify, push and await in one. Python mirrors it.
+
+## The Xurface SDK
+
+"Get the SDK" is not one package, it is a **meta-SDK**: a tiny core plus a growing
+family of **micro-SDKs** you add only where you need them.
+
+```
+@xurface/sdk (core)          the three calls, manifest, tokens
+  + @xurface/vscode          IDE skill installers (VS Code, Codespaces, Cursor)
+  + @xurface/langgraph       framework guards (LangGraph, CrewAI, AutoGen, ...)
+  + @xurface/mcp             serve every capability as an MCP tool
+  + your integration         add one, register it, ship it
+```
+
+Each micro-SDK is small, independent, and does one thing: teach one IDE or one
+framework to route discernment through Horizon. That is the contribution point,
+adding a micro-SDK is the highest-leverage PR here. Scaffold one with
+`npx create-xurface-sdk@latest` and submit it to the [registry](registry/index.json).
 
 ## How it works
 

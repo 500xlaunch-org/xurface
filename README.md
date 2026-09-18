@@ -20,6 +20,7 @@
 <p align="center">
   <a href="#what-is-xurface">What</a> &nbsp;·&nbsp;
   <a href="#quickstart">Quickstart</a> &nbsp;·&nbsp;
+  <a href="docs/DEVELOPER_GUIDE.md">Developer Guide</a> &nbsp;·&nbsp;
   <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
   <a href="#risk-and-appetite">Risk &amp; appetite</a> &nbsp;·&nbsp;
   <a href="#contributing">Contributing</a> &nbsp;·&nbsp;

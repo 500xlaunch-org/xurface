@@ -20,6 +20,36 @@ developers.** Your contribution pushes that loop.
   [`spec/`](spec/discernment-event.md).
 - **Translations and docs**.
 
+## Framework adapters: the tested path
+
+The highest-leverage contribution is a **framework adapter** (a "micro-SDK"): a
+small file that lets agents built on your framework route their critical actions
+through Horizon. It is intentionally tiny - about 40 lines - because all the risk
+logic lives in Horizon, not in the adapter. An adapter only translates shapes:
+framework tool-call in, guarded execution via `runGuarded`, framework tool-result
+out. It never scores risk or hard-codes a threshold.
+
+The stock SDKs ship adapters for OpenAI, Anthropic Claude, Google Gemini,
+LangChain / LangGraph, CrewAI, and MCP (Claude Code / Cursor / Zed). Add yours in
+three steps:
+
+1. **Copy the worked example.** `packages/sdk-typescript/adapters/gemini.mjs`
+   (TS) or `packages/sdk-python/xurface/adapters/gemini.py` (Python) were added
+   exactly the way a contribution is - map your framework's tool calls onto
+   `runGuarded`.
+2. **Pass the adapter contract test.** Every adapter must satisfy the same three
+   behaviors, checked offline against a `MockXurface` (no Horizon server needed):
+   an *allowed* capability runs the tool body; a *held/denied* one does not; the
+   adapter guards with the tool's declared capability and the model's args. Add a
+   case to `packages/sdk-typescript/test/adapter-contract.test.mjs`
+   (`node --test test/`) or `packages/sdk-python/test/adapter_contract.py`
+   (`python3 test/adapter_contract.py`). That is the whole bar, and CI runs it.
+3. **Open a PR** with the adapter, its contract-test case, and a line in the
+   package README's framework list.
+
+Full end-to-end tests against a live Horizon core live in the platform; for an
+adapter PR, the contract test is what you iterate on and what gates the merge.
+
 ## Before you start
 
 - For anything non-trivial, **open an issue first** so we can align on approach.

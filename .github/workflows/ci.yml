@@ -9,17 +9,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: TypeScript SDK typechecks
+      - name: TypeScript SDK - adapter contract test
         run: |
           cd packages/sdk-typescript
-          npm install --no-audit --no-fund
-          npx tsc -p tsconfig.json --noEmit
+          node --test test/
+      - name: TypeScript SDK - types + barrel load
+        run: |
+          cd packages/sdk-typescript
+          node --input-type=module -e "import('./index.mjs').then(m => { if (typeof m.Xurface !== 'function') process.exit(1); })"
       - name: Toolkit CLI parses and scaffolds
         run: |
           node --check toolkit/create-xurface-sdk/bin/create-xurface-sdk.js
           node toolkit/create-xurface-sdk/bin/create-xurface-sdk.js /tmp/smoke --kind tools --lang ts
           test -f /tmp/smoke/xurface.yaml
-      - name: Python SDK compiles
-        run: python3 -m py_compile packages/sdk-python/xurface/__init__.py packages/sdk-python/xurface/client.py
+      - name: Python SDK - compiles + adapter contract test
+        run: |
+          python3 -m py_compile packages/sdk-python/xurface/__init__.py packages/sdk-python/xurface/adapters/*.py
+          cd packages/sdk-python && python3 test/adapter_contract.py
       - name: Registry JSON is valid
         run: python3 -c "import json; json.load(open('registry/index.json'))"

@@ -1,93 +1,84 @@
-<p align="center">
-  <a href="https://xurface.500xlaunch.com"><img src="https://raw.githubusercontent.com/500xlaunch-org/xurface/main/docs/assets/banner.png" alt="Xurface" width="100%"></a>
-</p>
+# @xurface/sdk (TypeScript / JavaScript)
 
-<h1 align="center">@xurface/sdk</h1>
+Give your AI agents a **record** and a **conscience**, in one call.
 
-<p align="center"><b>Discernment for AI agents.</b><br/>Route the actions that matter to a human, in three calls.</p>
+[Xurface Horizon](https://xurface.500xlaunch.com) is the discernment checkpoint
+an agent routes through before it takes a critical action on a person's behalf.
+This SDK records every critical action on Horizon's signed audit ledger and, when
+the risk exceeds what the person tolerates, holds it for their approve / edit /
+deny in the Xurface Discern app - and the agent waits for the verdict.
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/@xurface/sdk"><img alt="npm" src="https://img.shields.io/npm/v/@xurface/sdk?color=3B6EA3&label=npm"></a>
-  <img alt="downloads" src="https://img.shields.io/npm/dm/@xurface/sdk?color=60A5FA">
-  <a href="https://pypi.org/project/xurface/"><img alt="python" src="https://img.shields.io/badge/python-xurface-3776AB?logo=pypi&logoColor=white"></a>
-  <a href="https://github.com/500xlaunch-org/xurface/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-3B6EA3"></a>
-  <a href="https://github.com/500xlaunch-org/xurface/blob/main/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-22C55E"></a>
-</p>
-
----
-
-AI agents now act for people around the clock. They pay, publish, deploy and
-delete. Passwords, passkeys and 2FA prove *who is calling*. They can't answer
-*should this happen*. **Xurface is the layer that asks.**
-
-You declare what your agent can do; Horizon scores the risk; the user's appetite
-decides. Routine actions pass and are logged. The ones that matter are pushed to
-the person's phone; they approve, deny or edit; your agent resumes with a signed,
-audited decision. You never hard-code a threshold. Zero dependencies, Node 18+.
+Modern ESM, zero runtime dependencies (uses the global `fetch`). Node >= 18.
 
 ## Install
 
 ```bash
-npm i @xurface/sdk
+npm install @xurface/sdk
 ```
 
-## The whole integration
+## Use
 
-```ts
+```js
 import { Xurface } from "@xurface/sdk";
 
-const xf = Xurface.fromSpec();                 // the manifest you downloaded from Horizon
+const xf = new Xurface({ clientId, clientSecret });          // Solution creds
 
-// declare once: you name the abilities, Horizon scores their risk.
-// developer_risk is optional and only ever raises a score.
-await xf.declareAgent("billing-bot", { abilities: [
-  { key: "pay_invoice", kind: "capability", developer_risk: { financial: "HIGH" } },
-]});
+await xf.declareAgent("apply-bot", {                         // Horizon scores each ability
+  display_name: "Apply Bot",
+  abilities: [
+    { key: "offers.scan", kind: "skill", description: "Scan the inbox for job offers" },
+    { key: "pay.invoice", kind: "capability", description: "Pay an invoice",
+      developer_risk: { financial: "HIGH" } },
+  ],
+});
 
-const ok = await xf.guard({ user, agent: "billing-bot",
-  capability: "pay_invoice", details: { amount: 2400, currency: "USD" } });
-// ok.state is "allowed" or "approved"; guard() throws if the person denies
-// ok.severity / ok.risk / ok.reasons carry what Horizon scored and why
+const user = await xf.resolveUser("email", "ada@example.com");
+
+const verdict = await xf.guard({
+  user, agent: "apply-bot", capability: "pay.invoice",
+  details: { amount: 2400 }, wait: 120000,                   // block up to 2 min for a decision
+});
+
+if (verdict.allowed) await reallyPay(verdict.details);       // details may be human-edited
+else console.log("not allowed:", verdict.state, verdict.reasons);
 ```
 
-`guard()` is evaluate → push → wait, in one: Horizon scores the action, reconciles
-it with the user's appetite, and decides. Force-pushes, deploys, payments and
-deletes now stop for a human when they should, and only when they should.
+- within appetite -> `allowed` immediately, and logged;
+- above appetite / SEVERE / developer `always` -> `held`, pushed to Discern;
+  `guard` blocks until the person decides (or `wait` elapses);
+- the person can **edit** the arguments before approving - they come back in
+  `verdict.details`.
 
-## What the person sees
+## Framework adapters
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/500xlaunch-org/xurface/main/docs/assets/discern.png" alt="A Xurface Discern notification: the solution, the agent, the steps needing discernment, and Approve / Approve all / Deny" width="72%">
-</p>
+Each adapter wraps a framework's tool abstraction so a held/denied action comes
+back as an ordinary tool result the model can read. Import per framework:
 
-One inbox, **Xurface Discern**, for every agent from every vendor. Approve one
-step, approve the whole sequence, or deny. Sequences and one-shot input requests
-are built in. Their passwords, passkeys and 2FA never leave their control.
+```js
+import { createOpenAIGuard }    from "@xurface/sdk/openai";
+import { createAnthropicGuard } from "@xurface/sdk/anthropic";
+import { createGeminiGuard }    from "@xurface/sdk/gemini";
+```
 
-## Part of something bigger
+Coding agents (Claude Code / Cursor / Zed / Windsurf) use the MCP server at
+`@xurface/sdk/mcp-server` (a stdio Model Context Protocol server exposing
+`xurface_guard`). Python adds LangGraph and CrewAI in the [`sdk-python`](../sdk-python)
+package.
 
-This SDK is one tile of a two-sided network: **developers** bring agents,
-**people** bring judgement, and the **Horizon** platform links the two and keeps
-the record. Every agent you onboard gives people one more reason to carry the
-app; every person makes your reach a little larger. More developers, more users.
-More users, more developers.
+**Add your framework** in ~40 lines: see the repo's
+[CONTRIBUTING.md](../../CONTRIBUTING.md). Copy [`adapters/gemini.mjs`](adapters/gemini.mjs)
+and make it pass the adapter contract test.
 
-`@xurface/sdk` is the core of a **meta-SDK**: add micro-SDKs only where you need
-them (`@xurface/langgraph`, `@xurface/vscode`, `@xurface/mcp`, ...). See the
-[monorepo](https://github.com/500xlaunch-org/xurface).
+## Test
 
-## Contributing
+```bash
+npm test           # runs the adapter contract test (offline, no Horizon needed)
+```
 
-The highest-leverage thing you can build here is a micro-SDK that teaches one more
-IDE or framework to route discernment. Scaffold one with
-`npx create-xurface-sdk@latest`, and see
-[CONTRIBUTING](https://github.com/500xlaunch-org/xurface/blob/main/CONTRIBUTING.md).
-Don't miss being early to the layer every agent will need.
+The contract test (`test/adapter-contract.test.mjs`) is the bar every adapter -
+including a contributed one - must pass: an allowed capability runs the tool, a
+held/denied one does not, and the adapter guards with the declared capability and
+the model's args. Full end-to-end tests against a live Horizon core live in the
+platform.
 
-## Links
-
-- **Site:** https://xurface.500xlaunch.com
-- **Repo & spec:** https://github.com/500xlaunch-org/xurface
-- **Python SDK:** https://pypi.org/project/xurface/
-
-Apache-2.0 · a product of [500xLaunch](https://500xlaunch.com).
+Part of [Xurface](https://github.com/500xlaunch-org/xurface). A product of 500xLaunch.

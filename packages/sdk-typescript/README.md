@@ -1,4 +1,4 @@
-# @xurface/sdk (TypeScript / JavaScript)
+# xurface (TypeScript / JavaScript)
 
 Give your AI agents a **record** and a **conscience**, in one call.
 
@@ -13,13 +13,13 @@ Modern ESM, zero runtime dependencies (uses the global `fetch`). Node >= 18.
 ## Install
 
 ```bash
-npm install @xurface/sdk
+npm install xurface
 ```
 
 ## Use
 
 ```js
-import { Xurface } from "@xurface/sdk";
+import { Xurface } from "xurface";
 
 const xf = new Xurface({ clientId, clientSecret });          // Solution creds
 
@@ -55,13 +55,13 @@ Each adapter wraps a framework's tool abstraction so a held/denied action comes
 back as an ordinary tool result the model can read. Import per framework:
 
 ```js
-import { createOpenAIGuard }    from "@xurface/sdk/openai";
-import { createAnthropicGuard } from "@xurface/sdk/anthropic";
-import { createGeminiGuard }    from "@xurface/sdk/gemini";
+import { createOpenAIGuard }    from "xurface/openai";
+import { createAnthropicGuard } from "xurface/anthropic";
+import { createGeminiGuard }    from "xurface/gemini";
 ```
 
 Coding agents (Claude Code / Cursor / Zed / Windsurf) use the MCP server at
-`@xurface/sdk/mcp-server` (a stdio Model Context Protocol server exposing
+`xurface/mcp-server` (a stdio Model Context Protocol server exposing
 `xurface_guard`). Python adds LangGraph and CrewAI in the [`sdk-python`](../sdk-python)
 package.
 

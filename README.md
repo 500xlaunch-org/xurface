@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-3B6EA3.svg"></a>
-  <a href="packages/sdk-typescript"><img alt="npm" src="https://img.shields.io/badge/npm-%40xurface%2Fsdk-3B6EA3.svg"></a>
+  <a href="packages/sdk-typescript"><img alt="npm" src="https://img.shields.io/badge/npm-xurface-3B6EA3.svg"></a>
   <a href="packages/sdk-python"><img alt="pypi" src="https://img.shields.io/badge/pypi-xurface-3B6EA3.svg"></a>
   <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-1f9d57.svg"></a>
   <a href="docs/DEVELOPER_GUIDE.md"><img alt="Developer Guide" src="https://img.shields.io/badge/read-the_Developer_Guide-60A5FA.svg"></a>
@@ -32,12 +32,18 @@ AI agents now act for us around the clock. They pay, publish, deploy and delete.
 Passwords, passkeys and 2FA answer *"who is this?"*. Nothing answers **"should
 this happen?"**
 
-Xurface is that missing layer. Your agent **declares** what it can do; **Horizon
-scores** the risk of each action against a standards-based taxonomy; the person
-sets an **appetite**. At runtime one call - **`guard`** - records the action on a
-signed audit ledger and, when it exceeds what the person tolerates, holds it and
-pushes it to their phone to approve, edit or deny. The agent never hard-codes a
-threshold, and nothing it does is off the books.
+**Xurface sits between an agent and everything it reaches** - its tools, its skills,
+its MCP servers, its AI gateway - and governs how it *behaves*. Not the resources:
+the agent's use of them. Every skill it runs, every tool or MCP call it makes, every
+capability it invokes passes through one guardrail, and that guardrail is set by the
+person whose interests are on the line, and enforced in their name.
+
+Concretely: your agent **declares** what it can do; **Horizon scores** the risk of
+each action against a standards-based taxonomy; the person sets an **appetite**. At
+runtime one call - **`guard`** - records the action on a signed audit ledger and,
+when it exceeds what the person tolerates, holds it and pushes it to their phone to
+approve, edit or deny. The agent never hard-codes a threshold, and nothing it does
+is off the books.
 
 This repo is the **open, developer-facing side**: the SDKs, the six framework
 adapters, the Discernment Event spec, and everything you need to add discernment
@@ -47,13 +53,13 @@ lines.
 ## Quickstart
 
 ```bash
-npm install @xurface/sdk          #  or:  pip install xurface
+npm install xurface          #  or:  pip install xurface
 ```
 
 Declare once; Horizon scores every ability. Then guard the actions that matter.
 
 ```js
-import { Xurface } from "@xurface/sdk";
+import { Xurface } from "xurface";
 
 const xf = new Xurface({ clientId, clientSecret });   // add env: "test" to build safely first
 
@@ -93,15 +99,15 @@ tool result the model can read.
 
 | Framework | Kind | Import |
 |---|---|---|
-| **OpenAI** (function / tool calling, Agents SDK) | genAI | `@xurface/sdk/openai` · `xurface.adapters.openai` |
-| **Anthropic Claude** (tool use, Claude Agent SDK) | genAI | `@xurface/sdk/anthropic` · `xurface.adapters.anthropic` |
-| **Google Gemini** (function calling) | genAI | `@xurface/sdk/gemini` · `xurface.adapters.gemini` |
+| **OpenAI** (function / tool calling, Agents SDK) | genAI | `xurface/openai` · `xurface.adapters.openai` |
+| **Anthropic Claude** (tool use, Claude Agent SDK) | genAI | `xurface/anthropic` · `xurface.adapters.anthropic` |
+| **Google Gemini** (function calling) | genAI | `xurface/gemini` · `xurface.adapters.gemini` |
 | **LangChain / LangGraph** | genAI orchestration | `xurface.adapters.langgraph` |
 | **CrewAI** | multi-agent | `xurface.adapters.crewai` |
-| **MCP** — Claude Code, Cursor, Zed, Windsurf | coding | `@xurface/sdk/mcp-server` |
+| **MCP** — Claude Code, Cursor, Zed, Windsurf | coding | `xurface/mcp-server` |
 
 ```js
-import { createOpenAIGuard } from "@xurface/sdk/openai";
+import { createOpenAIGuard } from "xurface/openai";
 const guard = createOpenAIGuard(xf, { user, agent: "apply-bot", wait: 120000 });
 const reg = guard.register(tools);           // your tools, unchanged
 for (const call of message.tool_calls) toolMessages.push(await reg.dispatch(call));
@@ -207,7 +213,7 @@ fun mission: trustworthy agents for everyone.
 ## What's in here
 
 ```
-packages/sdk-typescript   @xurface/sdk — client, consumer, 4 adapters + an MCP server (ESM, Node 18+)
+packages/sdk-typescript   xurface — client, consumer, 4 adapters + an MCP server (ESM, Node 18+)
 packages/sdk-python       xurface — client, consumer, 5 adapters (stdlib only, Python 3.10+)
 examples/                 runnable scenarios: a coding agent, payments, support, devops
 integrations/             activate Xurface across coding agents and frameworks

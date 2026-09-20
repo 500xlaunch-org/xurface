@@ -32,7 +32,7 @@ client_secret = xsk_...
 ### 2. Install the SDK
 
 ```bash
-npm install @xurface/sdk        # TypeScript / JavaScript
+npm install xurface        # TypeScript / JavaScript
 pip install xurface             # Python
 ```
 
@@ -47,7 +47,7 @@ conversation, data, system) and returns the effective severity. `developer_risk`
 is optional and can only *raise* Horizon's own score, never lower it.
 
 ```js
-import { Xurface } from "@xurface/sdk";
+import { Xurface } from "xurface";
 const xf = new Xurface({ clientId, clientSecret });
 
 await xf.declareAgent("apply-bot", {
@@ -106,7 +106,7 @@ and your tool bodies do not change - the adapter guards every call and turns a
 held/denied one into an ordinary tool result the model can read.
 
 ```js
-import { createOpenAIGuard } from "@xurface/sdk/openai";
+import { createOpenAIGuard } from "xurface/openai";
 const guard = createOpenAIGuard(xf, { user, agent: "apply-bot", wait: 120000 });
 const reg = guard.register([
   { name: "send_reply", capability: "reply.send",
@@ -124,7 +124,7 @@ for coding agents (Claude Code / Cursor / Zed):
 ```json
 // .mcp.json - Claude Code routes deploys, deletes, spends, force-pushes through Horizon
 { "mcpServers": { "xurface": {
-  "command": "npx", "args": ["-y", "@xurface/sdk", "xurface-mcp"],
+  "command": "npx", "args": ["-y", "xurface", "xurface-mcp"],
   "env": { "XURFACE_CLIENT_ID": "cli_...", "XURFACE_CLIENT_SECRET": "xsk_...",
            "XURFACE_AGENT": "coding-agent", "XURFACE_USER_REF": "email:you@company.com" } } } }
 ```
@@ -135,7 +135,7 @@ The person's app is built on the consumer API. In tests and demos you can drive
 it directly to play the human:
 
 ```js
-import { XurfaceConsumer } from "@xurface/sdk/consumer";
+import { XurfaceConsumer } from "xurface/consumer";
 const person = new XurfaceConsumer();
 await person.login("ada@example.com");
 await person.approveLink();                          // consent to the Solution
@@ -207,7 +207,7 @@ cd packages/sdk-python && python3 test/adapter_contract.py && cd -
 ### Repo layout
 
 ```
-packages/sdk-typescript   the TS SDK + adapters (@xurface/sdk)
+packages/sdk-typescript   the TS SDK + adapters (xurface)
 packages/sdk-python       the Python SDK + adapters (xurface)
 examples/                 runnable samples, incl. examples/scenarios
 integrations/             how to activate Xurface across agents/frameworks

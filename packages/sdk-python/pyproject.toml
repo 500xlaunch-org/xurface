@@ -1,6 +1,6 @@
 [project]
 name = "xurface"
-version = "0.2.1"
+version = "0.2.2"
 description = "Xurface SDK: give your AI agents a record and a conscience. Declare, then guard."
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"

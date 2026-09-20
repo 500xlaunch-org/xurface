@@ -50,6 +50,47 @@ adapters, the Discernment Event spec, and everything you need to add discernment
 to an agent in an afternoon - or to add support for one more framework in ~40
 lines.
 
+## You already know this model
+
+A phone app **declares** what it can reach - camera, location, contacts. The OS
+**classifies** which of those are dangerous, **shows you the list before you install**,
+and **stops the app** the first time it actually reaches for one. Sending a message
+inside the app is a given; reading your photos is not. The OS sits between the app and
+the resource, and the app cannot go around it.
+
+**Xurface is that surface, for AI agents.**
+
+| On your phone | With Xurface |
+|---|---|
+| The app manifest declares its permissions | The agent **declares** its skills, tools and capabilities |
+| The OS marks them normal vs dangerous | **Horizon scores** each one against a risk taxonomy |
+| You see the permission list **before** installing | You **review what it can do before you connect it** |
+| "Allow X to use your location?" | A **Discern card**: approve, **edit the values**, or deny |
+| Normal permissions just work | Routine actions pass - and are **logged** |
+| Revoke in Settings, anytime | Per-category **appetite** + **pause / revoke**, anytime |
+
+One difference matters: a phone asks about **resources**. Xurface asks about **what the
+agent does with them** - and it asks even when the solution would happily allow it,
+because the floor belongs to the person, not the developer.
+
+## What the SDK does
+
+Two jobs. That is the whole developer surface.
+
+1. **Declare the manifest.** `declareAgent()` tells Horizon what this agent can do.
+   Horizon scores every ability against the taxonomy. You never pick a threshold, and
+   you cannot under-rate an action - a developer risk hint can only raise a score.
+2. **Route every consequential access through the checkpoint.** `guard()` wraps the
+   moment the agent reaches for something. Inside the person's appetite it returns
+   instantly and is logged; above it, it holds, pushes to their phone, and waits.
+
+Use an adapter and job 2 becomes automatic for **every tool call, MCP call or gateway
+call** your agent makes - your tool bodies never change.
+
+What you get without building it: a signed, hash-chained **audit trail** of everything;
+per-category **appetite**; **edit-before-approve**; a **kill switch**; and two isolated
+environments to test in.
+
 ## Quickstart
 
 ```bash
@@ -204,6 +245,10 @@ Three steps, and CI proves it:
    [`test/adapter-contract.test.mjs`](packages/sdk-typescript/test/adapter-contract.test.mjs)
    (`node --test test/`) / `packages/sdk-python/test/adapter_contract.py`.
 3. **Open a PR** with the adapter, its contract case, and a line in the table above.
+
+**Why it is worth your afternoon:** every agent built on your framework gets these
+guardrails for free, your adapter ships in the next release, and the framework table
+above carries your name.
 
 Other great first PRs: a new **SDK language**, a **risk rule pack** for a domain, an
 **event transport**, an **agent skill**, a runnable **example Solution**. Full

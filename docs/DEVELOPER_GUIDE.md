@@ -61,6 +61,12 @@ await xf.declareAgent("apply-bot", {
 });
 ```
 
+> **What you declare is what people see.** Before anyone connects your Solution, the
+> Discern app shows them a permission label built from this declaration: every ability,
+> its severity, and whether it will run on its own or stop and ask them. Declaring
+> honestly is how you earn the connect. Declaring less than your agent does is grounds
+> for suspension - and an undeclared capability is scored on the fly and *always* asks.
+
 ### 4. Resolve the person
 
 A person connects your Solution to themselves by linking it in Xurface Discern

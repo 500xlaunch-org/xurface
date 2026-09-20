@@ -86,12 +86,14 @@ class Xurface:
     """The Horizon client for the *agent* side of a Solution."""
 
     def __init__(self, client_id: str, client_secret: str,
-                 api_base: str = DEFAULT_API_BASE, on_log: Optional[Callable[[dict], None]] = None):
+                 api_base: str = DEFAULT_API_BASE, env: Optional[str] = None,
+                 on_log: Optional[Callable[[dict], None]] = None):
         if not client_id or not client_secret:
             raise XurfaceError(0, "client_id and client_secret are required")
         self.api_base = api_base.rstrip("/")
         self.client_id = client_id
         self.client_secret = client_secret
+        self.env = "test" if env == "test" else None  # live is the default
         self._on_log = on_log or (lambda evt: None)
         self._token: Optional[str] = None
         self._token_exp: float = 0.0
@@ -109,15 +111,19 @@ class Xurface:
     def _access_token(self) -> str:
         if self._token and self._token_exp - 60 > time.time():
             return self._token
+        headers = {"content-type": "application/json"}
+        if self.env:
+            headers["x-xurface-env"] = self.env
         out = _http("POST", f"{self.api_base}/oauth/token",
-                    {"client_id": self.client_id, "client_secret": self.client_secret},
-                    {"content-type": "application/json"})
+                    {"client_id": self.client_id, "client_secret": self.client_secret}, headers)
         self._token = out["access_token"]
         self._token_exp = time.time() + out.get("expires_in", 900)
         return self._token
 
     def _api(self, method: str, path: str, body: Optional[dict] = None, auth: bool = True) -> Any:
         headers = {"content-type": "application/json"}
+        if self.env:
+            headers["x-xurface-env"] = self.env
         if auth:
             headers["authorization"] = f"Bearer {self._access_token()}"
         try:
@@ -237,13 +243,16 @@ class XurfaceConsumer:
     """Xurface Discern - the person's side of Horizon (used by examples/tests to
     play the human)."""
 
-    def __init__(self, api_base: str = DEFAULT_API_BASE, token: Optional[str] = None):
+    def __init__(self, api_base: str = DEFAULT_API_BASE, token: Optional[str] = None, env: Optional[str] = None):
         self.api_base = api_base.rstrip("/")
         self.token = token
+        self.env = "test" if env == "test" else None
         self.user: Optional[dict] = None
 
     def _api(self, method: str, path: str, body: Optional[dict] = None, auth: bool = True) -> Any:
         headers = {"content-type": "application/json"}
+        if self.env:
+            headers["x-xurface-env"] = self.env
         if auth:
             if not self.token:
                 raise XurfaceError(401, "not signed in; call login() first")

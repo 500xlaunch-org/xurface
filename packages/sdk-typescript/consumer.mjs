@@ -26,10 +26,12 @@ export class XurfaceConsumer {
     this.apiBase = (opts.apiBase || "https://xurface.500xlaunch.com").replace(/\/+$/, "");
     this._fetch = opts.fetch || globalThis.fetch;
     this.token = opts.token || null;
+    this.env = opts.env === "test" ? "test" : null; // live is the default
   }
 
   async _api(method, path, body, { auth = true } = {}) {
     const headers = { "content-type": "application/json" };
+    if (this.env) headers["x-xurface-env"] = this.env;
     if (auth) {
       if (!this.token) throw new XurfaceError(401, "not signed in; call login() first");
       headers.authorization = `Bearer ${this.token}`;

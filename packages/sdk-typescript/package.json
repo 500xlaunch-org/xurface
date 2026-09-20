@@ -1,20 +1,25 @@
 {
   "name": "@xurface/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Xurface SDK: give your AI agents a record and a conscience. Declare, then guard.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./index.mjs",
   "types": "./index.d.ts",
   "exports": {
-    ".": { "types": "./index.d.ts", "import": "./index.mjs" },
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs"
+    },
     "./consumer": "./consumer.mjs",
     "./openai": "./adapters/openai.mjs",
     "./anthropic": "./adapters/anthropic.mjs",
     "./gemini": "./adapters/gemini.mjs",
     "./mcp-server": "./adapters/mcp-server.mjs"
   },
-  "bin": { "xurface-mcp": "./adapters/mcp-server.mjs" },
+  "bin": {
+    "xurface-mcp": "./adapters/mcp-server.mjs"
+  },
   "files": [
     "xurface.mjs",
     "consumer.mjs",
@@ -26,7 +31,9 @@
   "scripts": {
     "test": "node --test test/"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/500xlaunch-org/xurface"

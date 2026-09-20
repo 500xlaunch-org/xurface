@@ -53,6 +53,7 @@ export interface XurfaceOptions {
   clientId: string;
   clientSecret: string;
   apiBase?: string;
+  env?: "test" | "live";
   fetch?: typeof fetch;
   onLog?: (evt: { level: string; msg: string; data?: unknown }) => void;
 }
@@ -82,7 +83,7 @@ export function runGuarded<T>(
   exec: (args: Record<string, unknown>) => Promise<T> | T,
 ): Promise<{ ok: boolean; guard: GuardResult; result?: T; message: string }>;
 
-export interface ConsumerOptions { apiBase?: string; token?: string; fetch?: typeof fetch }
+export interface ConsumerOptions { apiBase?: string; token?: string; env?: "test" | "live"; fetch?: typeof fetch }
 export class XurfaceConsumer {
   constructor(opts?: ConsumerOptions);
   token: string | null;

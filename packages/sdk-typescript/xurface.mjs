@@ -52,6 +52,7 @@ export class Xurface {
    * @param {string} opts.clientId       Solution client id (cli_...)
    * @param {string} opts.clientSecret   Solution client secret (xsk_...)
    * @param {string} [opts.apiBase]      default https://xurface.500xlaunch.com
+   * @param {"test"|"live"} [opts.env]   which Horizon environment (default live)
    * @param {typeof fetch} [opts.fetch]  override the fetch implementation
    * @param {(evt: {level:string,msg:string,data?:any}) => void} [opts.onLog]
    */
@@ -62,6 +63,7 @@ export class Xurface {
     this.apiBase = (opts.apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
     this.clientId = opts.clientId;
     this.clientSecret = opts.clientSecret;
+    this.env = opts.env === "test" ? "test" : null; // live is the default; header only for test
     this._fetch = opts.fetch || globalThis.fetch;
     if (!this._fetch) throw new XurfaceError(0, "no fetch available; pass opts.fetch");
     this._onLog = opts.onLog || (() => {});
@@ -86,7 +88,7 @@ export class Xurface {
     if (this._tok && this._tok.exp - 60_000 > Date.now()) return this._tok.token;
     const res = await this._fetch(`${this.apiBase}/oauth/token`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(this.env ? { "x-xurface-env": this.env } : {}) },
       body: JSON.stringify({ client_id: this.clientId, client_secret: this.clientSecret }),
     });
     const data = await res.json().catch(() => ({}));
@@ -98,6 +100,7 @@ export class Xurface {
   /** @param {"GET"|"POST"|"PUT"|"DELETE"} method */
   async _api(method, path, body, { auth = true, retryOn401 = true } = {}) {
     const headers = { "content-type": "application/json" };
+    if (this.env) headers["x-xurface-env"] = this.env;
     if (auth) headers.authorization = `Bearer ${await this._accessToken()}`;
     const res = await this._fetch(`${this.apiBase}${path}`, {
       method, headers, body: body != null ? JSON.stringify(body) : undefined,

@@ -159,6 +159,24 @@ Each prints which actions flowed and which were held or refused. See
 their own repos: [BattleMate](https://github.com/500xlaunch-org/battlemate) and
 [FreeLeap](https://github.com/500xlaunch-org/freeleap).
 
+### Test before you go live
+
+Horizon runs two isolated environments in one deployment: **test** and **live**.
+Build and try your agent in test - its own solutions, links, intents and audit
+chain - then roll out to live unchanged. Select it with one option:
+
+```js
+const xf = new Xurface({ clientId, clientSecret, env: "test" }); // live is the default
+```
+
+```python
+xf = Xurface(client_id=..., client_secret=..., env="test")
+```
+
+The SDK sends an `x-xurface-env` header; the person's Xurface Discern app has the
+same Test / Live switch, so you can watch your test agent's cards arrive on your
+phone without touching production.
+
 ### What you get for free
 
 Every action - allowed or not - is on a signed, hash-chained audit ledger. An

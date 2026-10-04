@@ -30,6 +30,7 @@ import { runGuarded } from "../xurface.mjs";
  * @param {{user:string, agent:string, wait?:number}} ctx
  */
 export function createAnthropicGuard(xf, ctx) {
+  xf.useAdapter?.("anthropic");
   return {
     /**
      * @param {Array<{name:string, description?:string, input_schema?:object,

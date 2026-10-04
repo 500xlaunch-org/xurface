@@ -49,6 +49,21 @@ else console.log("not allowed:", verdict.state, verdict.reasons);
 - the person can **edit** the arguments before approving - they come back in
   `verdict.details`.
 
+## Beyond guard: questions that wait, the vault, and connecting (1.3)
+
+Contributed from [Line](https://github.com/500xlaunch-org/line), which needed all of them.
+
+| Call | What it does |
+|---|---|
+| `ask({ user, agent, capability, summary, if_blocked, ttlHours })` | Ask without blocking; waits up to `ttlHours` (1 to 168) |
+| `intent(id)` / `push(id)` / `withdraw(id)` | Where it stands; ring their phone again; take it back |
+| `requestCredential({ user, agent, type, reason, ttlHours })` | Ask for something from their vault (`"bundle"`: they choose several), sealed to your release key |
+| `collect(id)` | What they released, once (ECDH P-256, HKDF-SHA256, AES-256-GCM) |
+| `receiveKey(user)` / `deliver({ ... envelope })` | Hand a person something sealed to their own vault |
+| `presence(user)` | The hour they last used Discern, nothing else (declare `presence.read`) |
+| `connectComplete(session)` | Finish a connection they started in Discern by signing in at your `connect_url` |
+| `useAdapter(name)` | Adapters call this, so your Solution's page shows what carries it |
+
 ## Framework adapters
 
 Each adapter wraps a framework's tool abstraction so a held/denied action comes

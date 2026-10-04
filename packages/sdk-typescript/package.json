@@ -1,6 +1,6 @@
 {
   "name": "xurface",
-  "version": "0.2.2",
+  "version": "1.3.0",
   "description": "Xurface SDK: give your AI agents a record and a conscience. Declare, then guard.",
   "license": "Apache-2.0",
   "type": "module",

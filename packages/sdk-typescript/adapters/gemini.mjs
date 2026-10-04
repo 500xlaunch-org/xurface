@@ -31,6 +31,7 @@ import { runGuarded } from "../xurface.mjs";
  * @param {{user:string, agent:string, wait?:number}} ctx
  */
 export function createGeminiGuard(xf, ctx) {
+  xf.useAdapter?.("gemini");
   return {
     /**
      * @param {Array<{name:string, description?:string, parameters?:object,

@@ -31,6 +31,11 @@
 
 const DEFAULT_API_BASE = "https://xurface.500xlaunch.com";
 
+/** This SDK's version. Sent with every call as `x-xurface-sdk`, so Horizon can
+ * show a Solution's developer, and the people deciding whether to trust it,
+ * what it was built with. Nothing else about the caller is sent. */
+export const VERSION = "1.3.0";
+
 /** An error carrying the HTTP status Horizon returned. */
 export class XurfaceError extends Error {
   /** @param {number} status @param {string} message @param {any} [body] */
@@ -67,6 +72,8 @@ export class Xurface {
     this._fetch = opts.fetch || globalThis.fetch;
     if (!this._fetch) throw new XurfaceError(0, "no fetch available; pass opts.fetch");
     this._onLog = opts.onLog || (() => {});
+    /** adapters in use (anthropic, openai, mcp...), named on every call */
+    this._adapters = new Set();
     /** @type {{token:string, exp:number}|null} */
     this._tok = null;
   }
@@ -81,6 +88,18 @@ export class Xurface {
     });
   }
 
+  /** An adapter says it is wrapping this client, so its use is visible too. */
+  useAdapter(name) {
+    if (/^[a-z0-9-]{1,24}$/.test(String(name))) this._adapters.add(String(name));
+    return this;
+  }
+
+  _stamp(headers) {
+    headers["x-xurface-sdk"] = `typescript/${VERSION}`;
+    if (this._adapters.size) headers["x-xurface-adapter"] = [...this._adapters].join(",");
+    return headers;
+  }
+
   // -- transport ------------------------------------------------------------
 
   async _accessToken() {
@@ -88,7 +107,7 @@ export class Xurface {
     if (this._tok && this._tok.exp - 60_000 > Date.now()) return this._tok.token;
     const res = await this._fetch(`${this.apiBase}/oauth/token`, {
       method: "POST",
-      headers: { "content-type": "application/json", ...(this.env ? { "x-xurface-env": this.env } : {}) },
+      headers: this._stamp({ "content-type": "application/json", ...(this.env ? { "x-xurface-env": this.env } : {}) }),
       body: JSON.stringify({ client_id: this.clientId, client_secret: this.clientSecret }),
     });
     const data = await res.json().catch(() => ({}));
@@ -99,7 +118,7 @@ export class Xurface {
 
   /** @param {"GET"|"POST"|"PUT"|"DELETE"} method */
   async _api(method, path, body, { auth = true, retryOn401 = true } = {}) {
-    const headers = { "content-type": "application/json" };
+    const headers = this._stamp({ "content-type": "application/json" });
     if (this.env) headers["x-xurface-env"] = this.env;
     if (auth) headers.authorization = `Bearer ${await this._accessToken()}`;
     const res = await this._fetch(`${this.apiBase}${path}`, {
@@ -130,7 +149,12 @@ export class Xurface {
    * Declare an agent and what it can do. Horizon scores each ability and returns
    * the effective severity + per-category risk. Idempotent - call it on boot.
    * @param {string} agentId
+   * `logo` is an https URL or a small data:image (svg, png or webp, 48 KB at
+   * most): it is what a person sees beside the agent's name in Discern.
+   * `solution` says where the Solution lives: its `homepage`, its `source`
+   * repository and its `license`, shown on its page in Discern and Horizon.
    * @param {{display_name?:string, description?:string, logo?:string,
+   *   solution?: {homepage?:string, source?:string, license?:string},
    *   abilities?: Array<{key:string, kind:"skill"|"tool"|"capability",
    *   description?:string, developer_risk?:any, discernment?:"auto"|"always"|"never",
    *   requires_auth?:string[], schema?:any}>}} decl
@@ -227,6 +251,95 @@ export class Xurface {
       details: intent.decision?.edited_details ?? p.details,
       decision: intent.decision,
     };
+  }
+
+  // -- asking, waiting, taking back -------------------------------------------
+  // What a long-running agent needs beyond guard(): ask something that may wait
+  // hours or days, look at it later, ring the phone again, and withdraw it once
+  // it no longer matters. Contributed from Line, which needed all of them.
+
+  /**
+   * Ask a person something without blocking. It waits up to `ttlHours` (1 to
+   * 168) for their answer; read it later with intent().
+   * @param {{user:string, agent:string, capability:string, summary?:string,
+   *   context?:string, if_blocked?:string, details?:any, ttlHours?:number}} p
+   */
+  ask(p) {
+    const { ttlHours, ...rest } = p;
+    return this._api("POST", "/v1/intents", { ...rest, ...(ttlHours ? { ttl_hours: ttlHours } : {}) });
+  }
+
+  /** Where an intent stands now, without waiting. */
+  intent(intentId) {
+    return this._api("GET", `/v1/intents/${encodeURIComponent(intentId)}/await?timeout=0`);
+  }
+
+  /** Ring the person's devices again for something already asked. */
+  push(intentId) {
+    return this._api("POST", `/v1/intents/${encodeURIComponent(intentId)}/push`, {});
+  }
+
+  /** Take back a question that no longer matters, so it leaves their inbox. */
+  withdraw(intentId) {
+    return this._api("POST", `/v1/intents/${encodeURIComponent(intentId)}/withdraw`, {});
+  }
+
+  // -- the vault ---------------------------------------------------------------
+  // A person's vault lives only on their device. These ask for something from
+  // it, sealed to this Solution's release key, and hand something on to a
+  // person, sealed to theirs. Horizon carries envelopes it cannot open.
+
+  /**
+   * Ask for something from the person's vault. `type` is a credential type
+   * ("login", "card", "document", "bundle" for several of their choosing...).
+   * @param {{user:string, agent:string, type:string, reason:string,
+   *   purpose?:string, ttlHours?:number}} p
+   */
+  requestCredential(p) {
+    const { ttlHours, ...rest } = p;
+    return this._api("POST", "/v1/credentials/request", { ...rest, ...(ttlHours ? { ttl_hours: ttlHours } : {}) });
+  }
+
+  /** What they released, once: an envelope sealed to your release key. */
+  collect(intentId) {
+    return this._api("GET", `/v1/credentials/${encodeURIComponent(intentId)}`);
+  }
+
+  /**
+   * When a linked person last used Discern, to the hour ({ seen_at }), or
+   * null. Only for a Solution whose agent declared the presence.read ability,
+   * which the person reads before connecting. Never says what they did.
+   * Contributed from Line: an answer anywhere in Discern means they are well.
+   */
+  presence(user) {
+    return this._api("GET", `/v1/users/${encodeURIComponent(user)}/presence`);
+  }
+
+  /**
+   * Finish a connection a person started in Discern. Your connect page gets
+   * ?xurface_session=...; once you have signed them in, call this with it and
+   * keep the pairwise id that comes back ({ user, status: "linked" }). Send
+   * them to ?xurface_return= if present. Declare where your connect page is
+   * with declareAgent(..., { solution: { connect_url } }).
+   */
+  connectComplete(session) {
+    return this._api("POST", "/v1/connect/complete", { session });
+  }
+
+  /** The key a person published so things can be handed to them sealed. */
+  receiveKey(user) {
+    return this._api("GET", `/v1/users/${encodeURIComponent(user)}/receive-key`);
+  }
+
+  /**
+   * Hand a person something, sealed to their receive key. They accept it in
+   * Discern, into their own vault.
+   * @param {{user:string, agent:string, title:string, from:string, count:number,
+   *   reason:string, envelope:{epk:string, iv:string, ct:string}, ttlHours?:number}} p
+   */
+  deliver(p) {
+    const { ttlHours, ...rest } = p;
+    return this._api("POST", "/v1/deliveries", { ...rest, ttl_hours: ttlHours ?? 168 });
   }
 
   // -- feedback loop --------------------------------------------------------

@@ -74,6 +74,28 @@ export class Xurface {
   discover(type: "email" | "phone" | "external_id", value: string): Promise<any>;
   resolveUser(type: "email" | "phone" | "external_id", value: string): Promise<string | null>;
   guard(p: GuardParams): Promise<GuardResult>;
+  /** Name an adapter wrapping this client, so its use shows on your Solution's page. */
+  useAdapter(name: string): this;
+  /** Ask without blocking; it waits up to ttlHours (1 to 168) for the person. */
+  ask(p: { user: string; agent: string; capability: string; summary?: string; context?: string; if_blocked?: string; details?: any; ttlHours?: number }): Promise<any>;
+  /** Where a request stands now, without waiting. */
+  intent(intentId: string): Promise<any>;
+  /** Ring the person's devices again for something already asked. */
+  push(intentId: string): Promise<any>;
+  /** Take back a question that no longer matters. */
+  withdraw(intentId: string): Promise<any>;
+  /** Ask for something from the person's vault ("bundle" lets them choose several), sealed to your release key. */
+  requestCredential(p: { user: string; agent: string; type: string; reason: string; purpose?: string; ttlHours?: number }): Promise<any>;
+  /** What they released, once: an envelope sealed to your release key. */
+  collect(intentId: string): Promise<{ intent: string; alg: string; ephemeral: string; salt: string; iv: string; ct: string }>;
+  /** The key a person published so things can be handed to them sealed. */
+  receiveKey(user: string): Promise<{ key: string; at: number }>;
+  /** Hand a person something sealed to their receive key; they accept it into their vault. */
+  deliver(p: { user: string; agent: string; title: string; from: string; count: number; reason: string; envelope: { alg: string; ephemeral: string; salt: string; iv: string; ct: string }; ttlHours?: number }): Promise<any>;
+  /** When a linked person last used Discern, to the hour (requires the presence.read ability). */
+  presence(user: string): Promise<{ user: string; seen_at: number | null }>;
+  /** Finish a connection the person started in Discern and signed in for on your connect page. */
+  connectComplete(session: string): Promise<{ user: string; status: "linked" }>;
   sideEffects(): Promise<{ side_effects: any[] }>;
 }
 

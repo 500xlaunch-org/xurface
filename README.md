@@ -11,273 +11,302 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-3B6EA3.svg"></a>
-  <a href="packages/sdk-typescript"><img alt="npm" src="https://img.shields.io/badge/npm-xurface-3B6EA3.svg"></a>
-  <a href="packages/sdk-python"><img alt="pypi" src="https://img.shields.io/badge/pypi-xurface-3B6EA3.svg"></a>
+  <a href="packages/sdk-typescript"><img alt="SDK 1.3" src="https://img.shields.io/badge/SDK-1.3.0-3B6EA3.svg"></a>
+  <a href="#built-with-xurface-line"><img alt="Built with Xurface: Line" src="https://img.shields.io/badge/built_with_Xurface-Line-F0613C.svg"></a>
   <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-1f9d57.svg"></a>
   <a href="docs/DEVELOPER_GUIDE.md"><img alt="Developer Guide" src="https://img.shields.io/badge/read-the_Developer_Guide-60A5FA.svg"></a>
 </p>
 
 <p align="center">
-  <a href="#quickstart">Quickstart</a> &nbsp;·&nbsp;
-  <a href="#framework-support">Frameworks</a> &nbsp;·&nbsp;
-  <a href="#the-app-people-discern-on">The app</a> &nbsp;·&nbsp;
-  <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
+  <a href="#the-platform">The platform</a> &nbsp;·&nbsp;
+  <a href="#built-with-xurface-line">Line, a real Solution</a> &nbsp;·&nbsp;
+  <a href="#use-it">Use it</a> &nbsp;·&nbsp;
   <a href="#contribute">Contribute</a> &nbsp;·&nbsp;
   <a href="docs/DEVELOPER_GUIDE.md">Developer Guide</a>
 </p>
 
 ---
 
-AI agents now act for us around the clock. They pay, publish, deploy and delete.
-Passwords, passkeys and 2FA answer *"who is this?"*. Nothing answers **"should
-this happen?"**
+AI agents now act for us around the clock. They pay, publish, deploy, delete, and
+hold things we would never leave lying around. Passwords, passkeys and 2FA answer
+*"who is this?"*. Nothing answers **"should this happen?"**
 
-**Xurface sits between an agent and everything it reaches** - its tools, its skills,
-its MCP servers, its AI gateway - and governs how it *behaves*. Not the resources:
-the agent's use of them. Every skill it runs, every tool or MCP call it makes, every
-capability it invokes passes through one guardrail, and that guardrail is set by the
-person whose interests are on the line, and enforced in their name.
+**Xurface answers it.** Your agent declares what it can do. Horizon scores the risk
+of every action against a published, standards-backed taxonomy. The person sets how
+much they let pass. Everything is written to a signed record, and anything above
+their line stops and waits for them, on their phone, with the agent's own words,
+the risk, and what happens if they say nothing.
 
-Concretely: your agent **declares** what it can do; **Horizon scores** the risk of
-each action against a standards-based taxonomy; the person sets an **appetite**. At
-runtime one call - **`guard`** - records the action on a signed audit ledger and,
-when it exceeds what the person tolerates, holds it and pushes it to their phone to
-approve, edit or deny. The agent never hard-codes a threshold, and nothing it does
-is off the books.
-
-This repo is the **open, developer-facing side**: the SDKs, the six framework
-adapters, the Discernment Event spec, and everything you need to add discernment
-to an agent in an afternoon - or to add support for one more framework in ~40
-lines.
+It works at the level of the **Solution**, not the model. Claude, GPT, Gemini or your
+own: every agent asks the same way and is answered the same way.
 
 ## You already know this model
 
-A phone app **declares** what it can reach - camera, location, contacts. The OS
-**classifies** which of those are dangerous, **shows you the list before you install**,
-and **stops the app** the first time it actually reaches for one. Sending a message
-inside the app is a given; reading your photos is not. The OS sits between the app and
-the resource, and the app cannot go around it.
-
-**Xurface is that surface, for AI agents.**
+A phone app **declares** what it can reach. The OS **classifies** what is dangerous,
+**shows you the list before you install**, and **stops the app** the first time it
+reaches for something sensitive. **Xurface is that surface, for AI agents**, with one
+difference that matters: a phone asks about resources; Xurface asks about **what the
+agent does with them**, and the floor belongs to the person, not the developer.
 
 | On your phone | With Xurface |
 |---|---|
-| The app manifest declares its permissions | The agent **declares** its skills, tools and capabilities |
-| The OS marks them normal vs dangerous | **Horizon scores** each one against a risk taxonomy |
-| You see the permission list **before** installing | You **review what it can do before you connect it** |
-| "Allow X to use your location?" | A **Discern card**: approve, **edit the values**, or deny |
-| Normal permissions just work | Routine actions pass - and are **logged** |
-| Revoke in Settings, anytime | Per-category **appetite** + **pause / revoke**, anytime |
+| The manifest declares permissions | The agent **declares** its skills, tools and capabilities |
+| The OS marks them normal or dangerous | **Horizon scores** each against the risk taxonomy |
+| You see the list **before** installing | You **read everything it can do before you connect it** |
+| "Allow X to use your location?" | A **Discern** request: approve, **edit the values**, or deny |
+| Normal permissions just work | Routine actions pass, and are **logged** |
+| Revoke in Settings | Per-area **appetite**, **pause**, **revoke**, any time |
 
-One difference matters: a phone asks about **resources**. Xurface asks about **what the
-agent does with them** - and it asks even when the solution would happily allow it,
-because the floor belongs to the person, not the developer.
+## The platform
 
-## What the SDK does
+Three parts, one loop: **Developers -> Horizon -> People.**
 
-Two jobs. That is the whole developer surface.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-1. **Declare the manifest.** `declareAgent()` tells Horizon what this agent can do.
-   Horizon scores every ability against the taxonomy. You never pick a threshold, and
-   you cannot under-rate an action - a developer risk hint can only raise a score.
-2. **Route every consequential access through the checkpoint.** `guard()` wraps the
-   moment the agent reaches for something. Inside the person's appetite it returns
-   instantly and is logged; above it, it holds, pushes to their phone, and waits.
+**Horizon** is where Solutions live. Agents register and declare what they can do;
+Horizon scores every action across seven areas (identity, money, location,
+intellectual property, conversation, data, systems), backed by NIST, ISO/IEC, PCI DSS
+and GDPR controls that are explained in plain words, and extensible with your own
+sources. It keeps a signed, hash-chained record of everything, holds what needs a
+person, and shows the owner and the platform what each Solution is built with.
 
-Use an adapter and job 2 becomes automatic for **every tool call, MCP call or gateway
-call** your agent makes - your tool bodies never change.
+</td>
+<td width="50%" valign="top">
 
-What you get without building it: a signed, hash-chained **audit trail** of everything;
-per-category **appetite**; **edit-before-approve**; a **kill switch**; and two isolated
-environments to test in.
+**Xurface Discern** is where people answer: one inbox for every agent from every
+developer, on Android, the web, and soon iOS. It shows who is asking, in their own
+words, how serious it is and what happens if nothing is done. It holds a **vault**
+that lives only on the phone (logins, cards, documents, photos, videos), from which
+a person hands an agent exactly what they choose, sealed so that not even Horizon
+can read it.
 
-## Quickstart
+</td>
+</tr>
+</table>
 
-```bash
-npm install xurface          #  or:  pip install xurface
+<p align="center">
+  <img src="docs/assets/horizon-console.png" width="860" alt="Horizon: a Solution's page, with its agent, what it declares, and how much stops to ask" />
+</p>
+
+**This repository** is the open side: the SDKs, the framework adapters, the
+specification, and the examples. Everything here is Apache-2.0.
+
+## Built with Xurface: Line
+
+<p align="center">
+  <img src="docs/assets/line-landing.png" width="860" alt="Line: when you can't, Line does" />
+</p>
+
+**[Line](https://line.500xlaunch.com)** is the first real Solution on Xurface, and its
+source is public: **[500xlaunch-org/line](https://github.com/500xlaunch-org/line)**.
+
+*When you can't, Line does.* You name the people who should receive what matters, in
+order. Every evening Line's agent, **Vigil**, asks you in Discern whether you are
+well. Now and then it asks what to keep from your vault. If a week passes in
+silence (and you were not seen in Discern, and did not say you were away), you are
+written to, given notice, and only then does Line reach the first person you named,
+and hand them what you chose, sealed to their own vault.
+
+It is a hard case on purpose: money, identity and the most private documents a
+person has, an agent that acts when the person cannot, and a mistake that would be
+unforgivable. Every one of those moments goes through Xurface.
+
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/assets/discern-vigil.png" width="360" alt="Discern: an alert, and Vigil's request, with its risk"/><br/><sub>Vigil in Discern: who is asking, how serious, in its own words</sub></td>
+<td width="50%" align="center"><img src="docs/assets/discern-vault-ask.png" width="360" alt="Discern: Vigil asks what to keep from the vault"/><br/><sub>Choosing what Line keeps, sealed on the phone before it leaves</sub></td>
+</tr>
+</table>
+
+### How Line uses the SDK
+
+Line talks to Horizon only through the SDK, and everything it needed and did not
+find there, it contributed back (SDK 1.1 to 1.3).
+
+**1. Declare the agent, once, on every start.** Name, face, everything it can ever do,
+and where the Solution lives. People read this list before they connect.
+
+```js
+await xf.declareAgent("line", {
+  display_name: "Vigil",
+  description: "Keeps watch for Line. Checks on you every evening and, if a week goes by in silence, hands what you chose to the people you named.",
+  logo: VIGIL_MARK,                                    // https or a small data:image
+  solution: { publisher: "500xLaunch", homepage: "https://line.500xlaunch.com",
+              source: "https://github.com/500xlaunch-org/line", license: "Apache-2.0",
+              connect_url: "https://line.500xlaunch.com/" },   // people connect by signing in here
+  abilities: [
+    { key: "heartbeat.confirm", kind: "capability", discernment: "always",
+      description: "Ask you, once an evening, whether you are well" },
+    { key: "vault.keep", kind: "capability", discernment: "always",
+      description: "Ask which things from your vault Line should keep for the people you named",
+      developer_risk: { identity: "SEVERE", financial: "SEVERE", data: "SEVERE" } },
+    { key: "presence.read", kind: "capability",
+      description: "Know when you last opened Discern, to the hour and nothing more" },
+    { key: "vault.deliver", kind: "capability", discernment: "always",
+      description: "Hand what you chose to the person you named, sealed to their own vault" },
+  ],
+});
 ```
 
-Declare once; Horizon scores every ability. Then guard the actions that matter.
+**2. Connect people by having them sign in.** Discern opens Line's sign-in with a
+short-lived session; Line signs the person in with its own passkey and finishes it.
+No address is matched, so a Line account under any email connects.
+
+```js
+const { user } = await xf.connectComplete(req.query.xurface_session);   // the pairwise id Line keeps
+```
+
+**3. Ask, and let it wait.** A question that can wait a day, with what happens if it
+is not answered. Taken back when it no longer matters.
+
+```js
+const it = await xf.ask({ user, agent: "line", capability: "heartbeat.confirm", ttlHours: 24,
+  summary: "Ada, are you well this evening? One tap tells Vigil you are fine.",
+  if_blocked: "Line keeps asking, and after a week begins handing over to the people you named." });
+await xf.push(it.id);
+// later: (await xf.intent(it.id)).state, or xf.withdraw(it.id)
+```
+
+**4. Ask for things from the vault, sealed to you.** The person chooses on their phone;
+what arrives is encrypted to Line's release key and can be collected once.
+
+```js
+const ask = await xf.requestCredential({ user, agent: "line", type: "bundle", ttlHours: 24,
+  reason: "Anything new worth keeping for the people you named?" });
+const envelope = await xf.collect(ask.id);   // ECDH P-256, HKDF, AES-256-GCM; Horizon never sees inside
+```
+
+**5. Hand it over, sealed to the person receiving it.**
+
+```js
+const { key } = await xf.receiveKey(kin);                        // their vault's public key
+await xf.deliver({ user: kin, agent: "line", title: "From Ada", from: "Ada Okafor",
+  count: 2, reason: "Ada asked Line to give you this.", envelope: sealTo(key, items) });
+```
+
+**6. Do not mistake a busy week for silence.** One tap anywhere in Discern counts.
+
+```js
+const { seen_at } = await xf.presence(user);   // the hour they last used Discern, nothing else
+```
+
+Line's whole life cycle (sign up, connect, keep, a week of silence, notice, hand over
+to the first person, move on to the next, accepted, erased) runs end to end against a
+real Horizon in its repository: `node tools/e2e.mjs`.
+
+## Use it
+
+```bash
+npm install xurface        # TypeScript / JavaScript, no dependencies
+pip install xurface        # Python, standard library only
+```
+
+The newest TypeScript SDK (1.3) is always in [`packages/sdk-typescript`](packages/sdk-typescript)
+and is also served by every Horizon at `/sdk/xurface.mjs`; the npm and PyPI releases
+follow it.
+
+1. **Register a Solution** in the Horizon console (`xurface.500xlaunch.com`), and keep
+   its client id and secret. Build in the **test** environment first:
+   `new Xurface({ clientId, clientSecret, env: "test" })`.
+2. **Declare your agents** with `declareAgent`. Horizon answers with the score of every
+   ability; you never pick a threshold, and a risk hint can only raise a score.
+3. **Connect people**, by declaring a `connect_url` (they sign in to you from Discern)
+   or by `discover` with an address they confirm in Discern.
+4. **Guard what matters.** `guard` records the action and, above the person's appetite,
+   holds it until they answer. For questions that can wait hours or days, `ask`.
+5. **Use the vault** only with `requestCredential`, `collect`, `receiveKey`, `deliver`:
+   nothing in it is ever readable by Horizon.
 
 ```js
 import { Xurface } from "xurface";
+const xf = new Xurface({ clientId, clientSecret });
 
-const xf = new Xurface({ clientId, clientSecret });   // add env: "test" to build safely first
-
-await xf.declareAgent("apply-bot", {
-  display_name: "Apply Bot",
-  abilities: [
-    { key: "offers.scan", kind: "skill", description: "Scan the inbox for job offers" },
-    { key: "pay.invoice", kind: "capability", description: "Pay an invoice",
-      developer_risk: { financial: "HIGH" } },
-  ],
-});
-
-const user = await xf.resolveUser("email", "ada@example.com");
-
-const verdict = await xf.guard({
-  user, agent: "apply-bot", capability: "pay.invoice",
-  details: { amount: 2400 }, wait: 120000,       // block up to 2 min for a human decision
-});
-
-if (verdict.allowed) await reallyPay(verdict.details);   // details may be the person's edits
-else console.log("not allowed:", verdict.state, verdict.reasons);
+const verdict = await xf.guard({ user, agent: "apply-bot", capability: "pay.invoice",
+  details: { amount: 2400 }, wait: 120000 });
+if (verdict.allowed) await reallyPay(verdict.details);   // details may carry the person's edits
 ```
 
-- **Within appetite** -> `allowed` instantly, and logged.
-- **Above appetite / SEVERE / developer `always`** -> held, pushed to the person's
-  phone; `guard` waits for their approve / edit / deny.
-- The person can **edit** your arguments before approving; you get the edited values.
+### Framework support
 
-Same shape in Python (`xf.guard(user=..., agent=..., capability=..., wait_ms=...)`).
-Full walk-through in the **[Developer Guide](docs/DEVELOPER_GUIDE.md)**.
+Use the adapter for your framework and your tool bodies do not change; a held or
+denied call comes back as an ordinary tool result.
 
-## Framework support
+| Framework | Import |
+|---|---|
+| **OpenAI** (tool calling, Agents SDK) | `xurface/openai` · `xurface.adapters.openai` |
+| **Anthropic Claude** (tool use, Claude Agent SDK) | `xurface/anthropic` · `xurface.adapters.anthropic` |
+| **Google Gemini** (function calling) | `xurface/gemini` · `xurface.adapters.gemini` |
+| **LangChain / LangGraph** | `xurface.adapters.langgraph` |
+| **CrewAI** | `xurface.adapters.crewai` |
+| **MCP** (Claude Code, Cursor, Zed, Windsurf) | `xurface/mcp-server` |
 
-Your agent already calls tools through a framework. Use the matching adapter and
-your tool bodies do not change - a held or denied call comes back as an ordinary
-tool result the model can read.
-
-| Framework | Kind | Import |
-|---|---|---|
-| **OpenAI** (function / tool calling, Agents SDK) | genAI | `xurface/openai` · `xurface.adapters.openai` |
-| **Anthropic Claude** (tool use, Claude Agent SDK) | genAI | `xurface/anthropic` · `xurface.adapters.anthropic` |
-| **Google Gemini** (function calling) | genAI | `xurface/gemini` · `xurface.adapters.gemini` |
-| **LangChain / LangGraph** | genAI orchestration | `xurface.adapters.langgraph` |
-| **CrewAI** | multi-agent | `xurface.adapters.crewai` |
-| **MCP** — Claude Code, Cursor, Zed, Windsurf | coding | `xurface/mcp-server` |
-
-```js
-import { createOpenAIGuard } from "xurface/openai";
-const guard = createOpenAIGuard(xf, { user, agent: "apply-bot", wait: 120000 });
-const reg = guard.register(tools);           // your tools, unchanged
-for (const call of message.tool_calls) toolMessages.push(await reg.dispatch(call));
-```
-
-For coding agents, it's one MCP entry (Claude Code `.mcp.json`) and the agent routes
-its deploys, deletes, force-pushes and spends through your phone. See
-[`integrations/`](integrations/README.md).
-
-## The app people discern on
-
-**Xurface Discern** is the phone (and tablet, and laptop) app where a person
-approves, edits or denies what your agent wants to do - one inbox for every agent
-from every developer.
-
-<p align="center">
-  <img src="docs/assets/discern-app.png" width="820" alt="Xurface Discern - the discernment inbox on a phone" />
-</p>
-
-> **Try the live app:** [xurface.500xlaunch.com/app](https://xurface.500xlaunch.com/app) —
-> sign in, connect a solution from the catalog, and approve or deny what it wants to
-> do, live. It ships cross-platform (Android, iOS, macOS, Windows) from one codebase:
-> [500xlaunch-org/discern](https://github.com/500xlaunch-org/discern).
-
-## How it works
-
-```
-Developers  ->  Horizon  ->  People
-```
-
-- **Developers** onboard an **Agentic Solution**. Agents self-declare their
-  skills, tools and capabilities; **Horizon scores** each against a NIST/ISO-mapped
-  risk taxonomy. You never set a threshold.
-- **Horizon** reconciles each action's score with the person's **appetite**, with
-  the person as the floor of protection. Routine actions pass and are logged on a
-  signed, hash-chained ledger; risky ones wait for a human. Abuse is contained;
-  gaps are analysed after the fact.
-- **People** get one inbox, **Xurface Discern**, for every agent. They approve,
-  edit or deny, set how much they want to be asked, and can flag or report anything.
-  Their judgement stays theirs.
-
-### Test before you go live
-
-Horizon runs two isolated environments in one deployment, **test** and **live**.
-Build and try an agent in test - its own solutions, links, intents and audit chain -
-then roll out unchanged. One option:
-
-```js
-new Xurface({ clientId, clientSecret, env: "test" });   // live is the default
-```
-
-### A two-sided market that compounds
-
-Developers bring Agentic Solutions that ask for discernment. People bring their
-identity, credentials and judgement. Horizon links the two and keeps the record.
-Every developer who onboards gives people one more reason to carry Xurface Discern;
-every person makes the audience a developer can reach a little larger.
-
-> **More developers, more people. More people, more developers.** Contributing here
-> is how you push that loop.
+Every call names the SDK version and the adapter it went through, so your Solution's
+page in Horizon shows what it is built with, and the platform sees which adapters
+carry which Solutions.
 
 ## Risk and appetite
 
-Every ability, and every runtime action, is scored across **identity, financial,
-location, intellectual, conversation, data, systems** (mapped to NIST 800-53/63 and
-ISO/IEC 27001/27701, see [`spec/risk-scoring.md`](spec/risk-scoring.md)). The
-action's severity is the highest category it touches.
-
-| Severity | Typical actions | Default |
+| Severity | Typical actions | By default |
 |---|---|---|
 | **Low** | read, search, list | passes, logged |
-| **Medium** | draft, small spend, routine messaging | passes, logged |
-| **High** | send, publish, pay, deploy, connect a credential | waits for the human |
-| **Severe** | delete, change access or credentials | waits, biometric, never delegated |
+| **Medium** | draft, small spend, routine messages | passes, logged |
+| **High** | send, publish, pay, deploy, connect a credential | waits for the person |
+| **Severe** | delete, change access, hand over secrets | waits, with a face or fingerprint, never delegated |
 
-No fixed threshold. The person's **appetite** (the severity they let pass, per
-category) is the floor: a developer can ask for more discernment, never quietly
-less. See [`spec/discernment-appetite.md`](spec/discernment-appetite.md).
+The person's **appetite** (what may pass, per area) is the floor: a Solution can start
+its people more carefully than the platform, never less, and a developer can ask for
+more discernment, never quietly less. See [`spec/risk-scoring.md`](spec/risk-scoring.md)
+and [`spec/discernment-appetite.md`](spec/discernment-appetite.md).
 
 ## Contribute
 
-Xurface gets better the more the ecosystem builds on it, and the loop above means
-every good contribution reaches more people. The highest-leverage PR is a **new
-framework adapter** - about 40 lines, because all the risk logic lives in Horizon.
+Xurface gets better the more the ecosystem builds on it. Good first contributions:
 
-Three steps, and CI proves it:
+- **A framework adapter**, about 40 lines, because the risk logic lives in Horizon.
+  Copy [`adapters/gemini.mjs`](packages/sdk-typescript/adapters/gemini.mjs), pass the
+  offline [adapter contract test](packages/sdk-typescript/test/adapter-contract.test.mjs),
+  open a PR with a line in the table above.
+- **Bring the Python SDK level with TypeScript 1.3**: `ask`, `intent`, `push`,
+  `withdraw`, `requestCredential`, `collect`, `receiveKey`, `deliver`, `presence`,
+  `connectComplete`. Each is one HTTP call; the TypeScript file is the reference.
+- **A Solution of your own.** Line is the pattern: declare, connect, ask, keep, deliver.
+  Tell us and it joins the list below.
+- **A risk source** for your domain (a regulation, a sector standard): Horizon shows
+  exactly what it would change before it applies.
+- A new **SDK language**, an **event transport**, an **agent skill**.
 
-1. **Copy the worked example.** Gemini was added exactly the way a contribution is:
-   [`packages/sdk-typescript/adapters/gemini.mjs`](packages/sdk-typescript/adapters/gemini.mjs)
-   (or the Python `gemini.py`). Map your framework's tool calls onto `runGuarded`.
-2. **Pass the adapter contract test** - offline, no Horizon needed. An *allowed*
-   capability runs the tool; a *held/denied* one does not; it guards with the right
-   capability and args.
-   [`test/adapter-contract.test.mjs`](packages/sdk-typescript/test/adapter-contract.test.mjs)
-   (`node --test test/`) / `packages/sdk-python/test/adapter_contract.py`.
-3. **Open a PR** with the adapter, its contract case, and a line in the table above.
+Tests: `cd packages/sdk-typescript && node --test test/` and
+`python3 packages/sdk-python/test/adapter_contract.py`. Full guide in
+[CONTRIBUTING.md](CONTRIBUTING.md) and the [Developer Guide](docs/DEVELOPER_GUIDE.md).
 
-**Why it is worth your afternoon:** every agent built on your framework gets these
-guardrails for free, your adapter ships in the next release, and the framework table
-above carries your name.
+### Solutions built with Xurface
 
-Other great first PRs: a new **SDK language**, a **risk rule pack** for a domain, an
-**event transport**, an **agent skill**, a runnable **example Solution**. Full
-guide in [CONTRIBUTING.md](CONTRIBUTING.md). Be excellent to each other - this is a
-fun mission: trustworthy agents for everyone.
+| Solution | What it does | Source |
+|---|---|---|
+| **[Line](https://line.500xlaunch.com)** | A next-of-kin agent: checks on you every evening, hands what you chose to the people you named | [500xlaunch-org/line](https://github.com/500xlaunch-org/line) |
 
-## What's in here
+## What is in here
 
 ```
-packages/sdk-typescript   xurface — client, consumer, 4 adapters + an MCP server (ESM, Node 18+)
-packages/sdk-python       xurface — client, consumer, 5 adapters (stdlib only, Python 3.10+)
+packages/sdk-typescript   xurface 1.3: client, consumer, 4 adapters and an MCP server (ESM, Node 18+)
+packages/sdk-python       xurface: client, consumer, 5 adapters (standard library, Python 3.10+)
 examples/                 runnable scenarios: a coding agent, payments, support, devops
-integrations/             activate Xurface across coding agents and frameworks
+integrations/             Xurface across coding agents and frameworks
 registry/                 the public SDK registry (add yours by PR)
 skills/                   the coding-agent skill (Claude Code, Cursor, ...)
 spec/                     Discernment Event, Solution Manifest, risk scoring, roles, OpenAPI
-toolkit/                  create-xurface-sdk scaffolder + how to submit
+toolkit/                  create-xurface-sdk scaffolder
 docs/                     the Developer Guide
 ```
-
-Run the tests: `cd packages/sdk-typescript && node --test test/` and
-`python3 packages/sdk-python/test/adapter_contract.py`. Both are green in CI on every push.
 
 ## Community, security, license
 
 - Questions or ideas: `digital@500xlaunch.com`. A star helps other developers find it.
-- Security: follow [SECURITY.md](SECURITY.md); do not open a public issue for vulnerabilities.
-- **Apache-2.0**, with an explicit patent grant - the interface is open on purpose:
-  use it, implement it, extend it. The running Horizon platform, its infrastructure
-  and the app are separate and not in this repository. See [LICENSE](LICENSE) / [NOTICE](NOTICE).
+- Security: follow [SECURITY.md](SECURITY.md); never open a public issue for a vulnerability.
+- **Apache-2.0**, with an explicit patent grant. The interface is open on purpose: use
+  it, implement it, extend it. The running Horizon platform and the Discern app are
+  separate and not in this repository. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 Xurface is a product of [500xLaunch](https://500xlaunch.com).

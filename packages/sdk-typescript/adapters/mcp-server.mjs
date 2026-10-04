@@ -44,6 +44,7 @@ const cfg = {
 const xf = cfg.clientId && cfg.clientSecret
   ? new Xurface({ clientId: cfg.clientId, clientSecret: cfg.clientSecret, apiBase: cfg.apiBase })
   : null;
+xf?.useAdapter("mcp");
 
 const SERVER_INFO = { name: "xurface-guard", version: "0.1.0" };
 const PROTOCOL_VERSION = "2024-11-05";

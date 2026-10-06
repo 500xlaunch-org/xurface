@@ -97,6 +97,8 @@ export class Xurface {
   /** Finish a connection the person started in Discern and signed in for on your connect page. */
   connectComplete(session: string): Promise<{ user: string; status: "linked" }>;
   sideEffects(): Promise<{ side_effects: any[] }>;
+  /** This Solution's own log of what its agents did, checked by Horizon against what it saw. */
+  log(entries: LogEntry | LogEntry[]): Promise<{ accepted: number; refused: number }>;
 }
 
 export function runGuarded<T>(
@@ -142,3 +144,16 @@ export function createGeminiGuard(xf: Xurface, ctx: GuardCtx): {
     geminiTools: any[]; dispatch(functionCall: any): Promise<any>; tools: Map<string, any>;
   };
 };
+
+export interface LogEntry {
+  agent: string;
+  summary: string;
+  kind?: "action" | "tool" | "skill" | "message" | "error" | "other";
+  capability?: string;
+  /** The Horizon request this answers to, when there was one. */
+  intent?: string;
+  /** Your own id for the person; kept with the entry, never shown. */
+  user?: string;
+  level?: "info" | "warn" | "error";
+  at?: string | number;
+}

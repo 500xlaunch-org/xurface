@@ -34,7 +34,7 @@ const DEFAULT_API_BASE = "https://xurface.500xlaunch.com";
 /** This SDK's version. Sent with every call as `x-xurface-sdk`, so Horizon can
  * show a Solution's developer, and the people deciding whether to trust it,
  * what it was built with. Nothing else about the caller is sent. */
-export const VERSION = "1.3.0";
+export const VERSION = "1.4.0";
 
 /** An error carrying the HTTP status Horizon returned. */
 export class XurfaceError extends Error {
@@ -347,6 +347,21 @@ export class Xurface {
   /** The flags + reports people raised against this Solution's actions. */
   sideEffects() {
     return this._api("GET", "/v1/side-effects");
+  }
+
+  // -- its own account of what it did -----------------------------------------
+
+  /**
+   * Send this Solution's own log of what its agents did, so Horizon can check
+   * it against what it saw: a tool an agent never declared, something done
+   * that nobody was asked about, or something done after a person said no.
+   * Up to 500 entries a call; each needs `agent` and `summary`.
+   * @param {Array<{agent: string, summary: string, kind?: "action"|"tool"|"skill"|"message"|"error"|"other",
+   *   capability?: string, intent?: string, user?: string, level?: "info"|"warn"|"error", at?: string|number}>} entries
+   * @returns {Promise<{accepted: number, refused: number}>}
+   */
+  log(entries) {
+    return this._api("POST", "/v1/logs", { entries: Array.isArray(entries) ? entries : [entries] });
   }
 }
 

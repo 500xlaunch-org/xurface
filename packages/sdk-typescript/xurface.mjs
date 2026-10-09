@@ -34,7 +34,7 @@ const DEFAULT_API_BASE = "https://xurface.500xlaunch.com";
 /** This SDK's version. Sent with every call as `x-xurface-sdk`, so Horizon can
  * show a Solution's developer, and the people deciding whether to trust it,
  * what it was built with. Nothing else about the caller is sent. */
-export const VERSION = "1.4.0";
+export const VERSION = "1.5.0";
 
 /** An error carrying the HTTP status Horizon returned. */
 export class XurfaceError extends Error {
@@ -313,6 +313,17 @@ export class Xurface {
    */
   presence(user) {
     return this._api("GET", `/v1/users/${encodeURIComponent(user)}/presence`);
+  }
+
+  /**
+   * The name a linked person goes by in Discern, and the language they read
+   * it in, for an agent that declared profile.name. Call them what they call
+   * themselves.
+   * @param {string} user the person's id for this Solution
+   * @returns {Promise<{user: string, name: string|null, lang: string|null}>}
+   */
+  profile(user) {
+    return this._api("GET", `/v1/users/${encodeURIComponent(user)}/profile`);
   }
 
   /**

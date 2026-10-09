@@ -98,6 +98,8 @@ export class Xurface {
   connectComplete(session: string): Promise<{ user: string; status: "linked" }>;
   sideEffects(): Promise<{ side_effects: any[] }>;
   /** This Solution's own log of what its agents did, checked by Horizon against what it saw. */
+  /** The name a linked person goes by in Discern (needs profile.name declared). */
+  profile(user: string): Promise<{ user: string; name: string | null; lang: string | null }>;
   log(entries: LogEntry | LogEntry[]): Promise<{ accepted: number; refused: number }>;
 }
 

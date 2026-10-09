@@ -99,8 +99,8 @@ specification, and the examples. Everything here is Apache-2.0.
   <img src="docs/assets/line-landing.png" width="860" alt="Line: when you can't, Line does" />
 </p>
 
-**[Line](https://line.500xlaunch.com)** is the first real Solution on Xurface, and its
-source is public: **[500xlaunch-org/line](https://github.com/500xlaunch-org/line)**.
+**[Line](https://line.500xlaunch.com)** is the first real Solution on Xurface. Its own code
+is private; the excerpts below show how it uses this SDK.
 
 *When you can't, Line does.* You name the people who should receive what matters, in
 order. Every evening Line's agent, **Vigil**, asks you in Discern whether you are
@@ -134,7 +134,6 @@ await xf.declareAgent("line", {
   description: "Keeps watch for Line. Checks on you every evening and, if a week goes by in silence, hands what you chose to the people you named.",
   logo: VIGIL_MARK,                                    // https or a small data:image
   solution: { publisher: "500xLaunch", homepage: "https://line.500xlaunch.com",
-              source: "https://github.com/500xlaunch-org/line", license: "Apache-2.0",
               connect_url: "https://line.500xlaunch.com/" },   // people connect by signing in here
   abilities: [
     { key: "heartbeat.confirm", kind: "capability", discernment: "always",
@@ -285,7 +284,7 @@ Tests: `cd packages/sdk-typescript && node --test test/` and
 
 | Solution | What it does | Source |
 |---|---|---|
-| **[Line](https://line.500xlaunch.com)** | A next-of-kin agent: checks on you every evening, hands what you chose to the people you named | [500xlaunch-org/line](https://github.com/500xlaunch-org/line) |
+| **[Line](https://line.500xlaunch.com)** | A next-of-kin agent: checks on you every evening, hands what you chose to the people you named | Private |
 
 ## What is in here
 
